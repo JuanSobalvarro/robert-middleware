@@ -1,19 +1,24 @@
-cmake_minimum_required(VERSION 3.10)
-project(robert)
+cmake_minimum_required(VERSION 3.16)
+project(RobeRT_server VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find Google Protocol Buffers
-find_package(Protobuf REQUIRED)
+include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
-# Include the generated files
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+set(SOURCES
+    src/main.cpp
+)
 
-# Automatically generate .h and .cc files from egm.proto
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/egm.proto)
+add_executable(${PROJECT_NAME} ${SOURCES})
 
-# Create the executable
-add_executable(egm_server src/main.cpp ${PROTO_SRCS})
+target_link_libraries(
+    ${PROJECT_NAME}
+)
 
-# Link dependencies
-target_link_libraries(egm_server ${Protobuf_LIBRARIES} pthread)
+if(UNIX)
+    target_link_libraries(${PROJECT_NAME} PRIVATE pthread)
+endif()
