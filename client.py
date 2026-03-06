@@ -1,7 +1,6 @@
 import socket
 import sys
 
-# --- Configuration ---
 ROBOT_IP = '127.0.0.1'
 ROBOT_PORT = 5000
 
