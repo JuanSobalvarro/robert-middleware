@@ -1,4 +1,8 @@
+#pragma once
+
 #include <array>
+#include <string>
+#include <stdexcept>
 
 namespace robert
 {
@@ -16,6 +20,7 @@ public:
     double z() const;
 
     void set_position(double x, double y, double z);
+    std::string to_string() const;
 private:
     std::array<double, 3> position_;
 };
@@ -34,6 +39,7 @@ public:
     double q4() const;
 
     void set_orientation(double q1, double q2, double q3, double q4);
+    std::string to_string() const;
 private:
     std::array<double, 4> qrotation_;
 };
@@ -52,6 +58,7 @@ public:
     unsigned int cfx() const;
 
     void set_config_data(signed int cf1, signed int cf4, signed int cf6, unsigned int cfx);
+    std::string to_string() const;
 private:
     std::array<signed int, 3> cf_;
     unsigned int cfx_; 
@@ -66,6 +73,7 @@ public:
     RobTarget();
     ~RobTarget();
 
+    std::string to_string() const;
 private:
     RobPosition position_;
     RobOrientation orientation_;

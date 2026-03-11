@@ -8,3 +8,5 @@ log
 egm.mod
 notes.md
 default.md
+.venv
+robots.conf

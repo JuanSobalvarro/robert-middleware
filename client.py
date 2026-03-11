@@ -1,97 +1,127 @@
-import socket
+import os
 import sys
+import zmq
+from typing import Optional
 
-ROBOT_IP = '127.0.0.1'
-ROBOT_PORT = 5000
+# Configuration
+ZMQ_ENDPOINT = os.getenv("ROBERT_ZMQ_ENDPOINT", "tcp://172.26.155.178:42069")
 
-COMMANDS = {
-    "MOVEJ": "Send MOVEJ command with X,Y,Z coordinates",
-    "ORIGIN": "Send ORIGIN command to set current position as origin",
-    "HOME": "Send HOME command to move robot to home position",
-    "CUSTOM/RAW": "Send a custom command string to the robot",
-    "EXIT": "Disconnect and exit the CLI"
-}
+class RobeRTClient:
+    def __init__(self, endpoint: str):
+        self.context = zmq.Context()
+        self.socket = self.context.socket(zmq.REQ)
+        self.socket.setsockopt(zmq.RCVTIMEO, 5000)  # 5s timeout
+        self.endpoint = endpoint
+
+    def connect(self):
+        print(f"[*] Connecting to RobeRT Middleware at {self.endpoint}...")
+        self.socket.connect(self.endpoint)
+
+    def send(self, command: str) -> str:
+        try:
+            self.socket.send_string(command)
+            return self.socket.recv_string()
+        except zmq.Again:
+            return "ERROR: Middleware timeout (Is the server running?)"
+        except Exception as e:
+            return f"ERROR: {str(e)}"
+
+    def close(self):
+        self.socket.close()
+        self.context.term()
+
+def get_input(prompt: str, default: str) -> str:
+    user_input = input(f"{prompt} [{default}]: ").strip()
+    return user_input if user_input else default
+
+def format_target_csv(label: str) -> str:
+    print(f"\n--- {label} Configuration ---")
+    # Using standard ABB default values for an IRB 140
+    x = get_input("  x (mm)", "400.0")
+    y = get_input("  y (mm)", "0.0")
+    z = get_input("  z (mm)", "500.0")
+    q1 = get_input("  q1", "1.0")
+    q2 = get_input("  q2", "0.0")
+    q3 = get_input("  q3", "0.0")
+    q4 = get_input("  q4", "0.0")
+    cf1 = get_input("  cf1", "0")
+    cf4 = get_input("  cf4", "0")
+    cf6 = get_input("  cf6", "0")
+    cfx = get_input("  cfx", "0")
+    return f"{x},{y},{z},{q1},{q2},{q3},{q4},{cf1},{cf4},{cf6},{cfx}"
 
 def display_menu():
-    print("\n" + "="*30)
-    print(" ABB VIRTUAL CONTROLLER CLI ")
-    print("="*30)
-    for i, (cmd, desc) in enumerate(COMMANDS.items(), start=1):
-        print(f"{i}. {cmd}: {desc}")
-    print("="*30)
+    print("\n" + "═"*45)
+    print("  RobeRT INDUSTRIAL MIDDLEWARE CLI v1.0  ")
+    print("═"*45)
+    menu = {
+        "1": "MoveL (Linear)",
+        "2": "MoveJ (Joint-Cartesian)",
+        "3": "MoveC (Circular)",
+        "4": "MoveAbsJ (Joint-Axis)",
+        "5": "Set Speed",
+        "6": "Set Precision",
+        "7": "Emergency STOP",
+        "8": "PING (Heartbeat)",
+        "9": "CUSTOM Raw Command",
+        "0": "EXIT"
+    }
+    for k, v in menu.items():
+        print(f" {k}. {v}")
+    print("═"*45)
 
 def main():
-    # Initialize the socket
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    print(f"Connecting to Virtual Controller at {ROBOT_IP}:{ROBOT_PORT}...")
-    try:
-        client_socket.connect((ROBOT_IP, ROBOT_PORT))
-        print("Successfully connected!")
-    except ConnectionRefusedError:
-        print("\nError: Connection refused.")
-        print("Make sure the RAPID program is running and waiting at SocketAccept.")
-        sys.exit(1)
+    client = RobeRTClient(ZMQ_ENDPOINT)
+    client.connect()
 
-    # Main CLI Loop
     try:
         while True:
             display_menu()
-            choice = input("Select an option (1-5): ").strip()
-            
-            command_str = ""
-            
-            if choice == '1':
-                # Gather coordinates
-                try:
-                    x = float(input("Enter X coordinate (mm): "))
-                    y = float(input("Enter Y coordinate (mm): "))
-                    z = float(input("Enter Z coordinate (mm): "))
-                    # Construct the comma-separated string
-                    command_str = f"MOVEJ,{x},{y},{z}"
-                except ValueError:
-                    print("Invalid input! Please enter numeric values.")
-                    continue
+            choice = input("\nSelect Option > ").strip()
 
-            elif choice == '2':
-                command_str = "ORIGIN"  
-                    
-            elif choice == '3':
-                command_str = "HOME"
-                
-            elif choice == '4':
-                command_str = input("Enter raw command string: ").strip()
-                if not command_str:
-                    continue
-                    
-            elif choice == '5':
-                command_str = "EXIT"
-                
+            command = ""
+            if choice == "1":
+                command = f"MOVEL|{format_target_csv('MoveL')}"
+            elif choice == "2":
+                command = f"MOVEJ|{format_target_csv('MoveJ')}"
+            elif choice == "3":
+                cir = format_target_csv("MoveC (Circle Point)")
+                to = format_target_csv("MoveC (Dest Point)")
+                command = f"MOVEC|{cir}|{to}"
+            elif choice == "4":
+                print("\n--- MoveAbsJ (Degrees) ---")
+                j = [get_input(f"  j{i}", "0.0") for i in range(1, 7)]
+                command = f"MOVEABSJ|{','.join(j)}"
+            elif choice == "5":
+                val = get_input("Speed (mm/s)", "100")
+                command = f"SETSPEED|{val}"
+            elif choice == "6":
+                val = get_input("Precision (fine/z10/z50)", "z10")
+                command = f"SETPRECISION|{val}"
+            elif choice == "7":
+                command = "STOP|NONE"
+            elif choice == "8":
+                command = "PING|NONE"
+            elif choice == "9":
+                command = input("Raw Message > ").strip()
+            elif choice == "0" or choice.lower() == "exit":
+                client.send("EXIT|NONE")
+                break
             else:
-                print("Invalid choice. Please select 1-5.")
+                print("[!] Invalid selection.")
                 continue
 
-            # Send the encoded string to the robot
-            print(f"\nSending -> {command_str}")
-            client_socket.sendall(command_str.encode('ascii'))
+            print(f"[*] Sending: {command}")
+            response = client.send(command)
             
-            # If EXIT was sent, break the loop and close out
-            if command_str == "EXIT":
-                print("Disconnect signal sent. Exiting CLI...")
-                break
-                
-            # Wait for the RAPID server to finish processing and send "ACK"
-            print("Waiting for acknowledgment from controller...")
-            response = client_socket.recv(1024).decode('ascii')
-            print(f"Robot replied <- {response}")
+            # Color coding status (simplified for terminal)
+            status_prefix = "[+]" if "ACK" in response or "PONG" in response else "[!]"
+            print(f"{status_prefix} Middleware Response: {response}")
 
     except KeyboardInterrupt:
-        print("\nCLI forcefully interrupted by user.")
-    except Exception as e:
-        print(f"\nAn unexpected network error occurred: {e}")
+        print("\n[!] Disconnecting...")
     finally:
-        print("Closing socket connection.")
-        client_socket.close()
+        client.close()
 
 if __name__ == "__main__":
     main()
