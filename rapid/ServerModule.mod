@@ -3,7 +3,7 @@ MODULE ServerModule
     VAR socketdev listener_socket;
     VAR socketdev client_socket;
     
-    VAR string received_parts{2}; 
+    VAR string received_parts{9}; ! cmd|[robtarget.pos][robtarget.rot][robtarget.conf][robtarget.ext]|[extrarobtarget.pos][extrarobtarget.rot][extrarobtarget.conf][extrarobtarget.ext]
     VAR rawbytes raw_buffer;
     VAR bool server_running := TRUE;
 
@@ -46,6 +46,8 @@ MODULE ServerModule
             ! Receive up to 1024 bytes into the raw buffer
             SocketReceive client_socket \RawData := raw_buffer \Time:=WAIT_MAX;
             bytes_received := RawBytesLen(raw_buffer);
+
+            bytes_to_strings raw_buffer, bytes_received;
             
             IF bytes_received > 0 THEN
                 IF bytes_received > 160 THEN
@@ -88,5 +90,21 @@ MODULE ServerModule
             client_active := FALSE;
             TRYNEXT;
         ENDIF
+    ENDPROC
+
+    PROC bytes_to_strings(rawbytes data, num length)
+        ! Implementation for converting raw bytes to strings
+        VAR string cmd;
+        VAR string rt_pos;
+        VAR string rt_rot;
+        VAR string rt_conf;
+        VAR string rt_ext;
+        VAR string extra_rt_pos;
+        VAR string extra_rt_rot;
+        VAR string extra_rt_conf;
+        VAR string extra_rt_ext;
+
+        UnPackRawBytes data, 1, cmd \ASCII := length;
+
     ENDPROC
 ENDMODULE

@@ -3,81 +3,127 @@
 #include <array>
 #include <string>
 #include <stdexcept>
+#include <cstdint>
 
 namespace robert
 {
 
-class RobPosition
-{
+#pragma pack(push, 1) // forces the compiler to not add padding bytes (1 byte aligning)
+
+struct BinRobPosition {
+    uint32_t x; // this means float
+    uint32_t y;
+    uint32_t z;
+};
+
+struct BinRobOrientation {
+    uint32_t q1;
+    uint32_t q2;
+    uint32_t q3;
+    uint32_t q4;
+};
+
+struct BinRobConfigData {
+    int32_t cf1; // conf are signed ints
+    int32_t cf4;
+    int32_t cf6;
+    uint32_t cfx; // cfx is unsigned int
+};
+
+struct BinRobJoint {
+    uint32_t j1;
+    uint32_t j2;
+    uint32_t j3;
+    uint32_t j4;
+    uint32_t j5;
+    uint32_t j6;
+};
+
+struct BinRobTarget {
+    BinRobPosition position; // 12 bytes
+    BinRobOrientation orientation; // 16 bytes
+    BinRobConfigData config_data; // 16 bytes
+    BinRobJoint ext_joint; // 24 bytes
+    // total: 68 bytes
+};
+
+#pragma pack(pop) // end of packing
+
+class RobPosition {
+
 public:
-    RobPosition(double x, double y, double z);
+    RobPosition(float x, float y, float z);
     RobPosition(const RobPosition& other);
     RobPosition();
     ~RobPosition();
 
-    double x() const;
-    double y() const;
-    double z() const;
+    BinRobPosition to_bin() const;
 
-    void set_position(double x, double y, double z);
-    std::string to_string() const;
+    void set_position(float x, float y, float z);
 private:
-    std::array<double, 3> position_;
+    std::array<float, 3> position_;
 };
 
-class RobOrientation
-{
+class RobOrientation {
+
 public:
-    RobOrientation(double q1, double q2, double q3, double q4);
+    RobOrientation(float q1, float q2, float q3, float q4);
     RobOrientation(const RobOrientation& other);
     RobOrientation();
     ~RobOrientation();
 
-    double q1() const;
-    double q2() const;
-    double q3() const;
-    double q4() const;
+    BinRobOrientation to_bin() const;
 
-    void set_orientation(double q1, double q2, double q3, double q4);
-    std::string to_string() const;
+    void set_orientation(float q1, float q2, float q3, float q4);
 private:
-    std::array<double, 4> qrotation_;
+    std::array<float, 4> orientation_;
 };
 
-class RobConfigData
-{
+class RobConfigData {
 public:
-    RobConfigData(signed int cf1, signed int cf4, signed int cf6, unsigned int cfx);
+    RobConfigData(int cf1, int cf4, int cf6, unsigned int cfx);
     RobConfigData(const RobConfigData& other);
     RobConfigData();
     ~RobConfigData();
 
-    signed int cf1() const;
-    signed int cf4() const;
-    signed int cf6() const;
-    unsigned int cfx() const;
+    BinRobConfigData to_bin() const;
 
-    void set_config_data(signed int cf1, signed int cf4, signed int cf6, unsigned int cfx);
-    std::string to_string() const;
+    void set_config_data(int cf1, int cf4, int cf6, unsigned int cfx);
 private:
-    std::array<signed int, 3> cf_;
-    unsigned int cfx_; 
+    std::array<int, 4> config_data_; // we can store cfx as int and convert it to unsigned int when needed, since cfx is always positive
 };
 
-class RobTarget
-{
+class RobJoint {
 public:
-    RobTarget(const RobPosition& position, const RobOrientation& orientation, const RobConfigData& config_data);
-    RobTarget(std::array<double, 3> position, std::array<double, 4> orientation, std::array<signed int, 3> config_data, unsigned int cfx);
+    RobJoint(float j1 = 9e9f, float j2 = 9e9f, float j3 = 9e9f, float j4 = 9e9f, float j5 = 9e9f, float j6 = 9e9f);
+    RobJoint(const RobJoint& other);
+    RobJoint();
+    ~RobJoint();
+
+    BinRobJoint to_bin() const;
+
+    void set_ext_joint(float j1, float j2, float j3, float j4, float j5, float j6);
+private:
+    std::array<float, 6> ext_joint_;
+};
+
+class RobTarget {
+public:
+    RobTarget(const RobPosition& position, const RobOrientation& orientation, const RobConfigData& config_data, const RobJoint& ext_joint);
     RobTarget(const RobTarget& other);
     RobTarget();
     ~RobTarget();
 
+    BinRobTarget to_bin() const;
+
     std::string to_string() const;
+    void set_target(const RobPosition& position, const RobOrientation& orientation, const RobConfigData& config_data, const RobJoint& ext_joint);
 private:
     RobPosition position_;
     RobOrientation orientation_;
     RobConfigData config_data_;
+    RobJoint ext_joint_;
 };
 
+//
 } // namespace robert

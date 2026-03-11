@@ -59,7 +59,7 @@ MODULE ParsingModule
 
     FUNC robtarget retrieve_robtarget(string parts{*}, num offset_cmd)
         ! parts will be something like:
-        ! "MJ|[400.00,0.00,500.00][0.000000,0.000000,-1.000000,0.000000][0,0,-1,0][9e9," "9e9,9e9,9e9,9e9,9e9]"
+        ! "MJ|[400.00,0.00,500.00][0.000000,0.000000,-1.000000,0.000000][0,0,-1,0][9E+9," "9E+9,9E+9,9E+9,9E+9,9E+9]"
         ! now offset cmd is the index where the "MJ|" part ends, so we can start looking for the robtarget from there
         VAR robtarget result;
         VAR string pos_str;
