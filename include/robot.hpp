@@ -13,6 +13,8 @@
 #include <stdexcept>
 #include <atomic>
 
+#include "command.hpp"
+
 namespace robert {
 
 class Robot {
@@ -23,13 +25,13 @@ public:
     void start_session();
     void stop_session();
 
-    void queue_message(const std::string& message);
+    void queue_message(const MessageCommand& message);
     
 private:
     void worker_loop(); // thread function to handle sending/receiving messages
-
-    std::string send_and_receive(const std::string& message);
-    bool send_string(const std::string& message);
+    
+    bool send_message(const MessageCommand& message);
+    std::string send_and_receive(const MessageCommand& message);
     std::string receive_string();
 
     std::string ip_;
@@ -42,7 +44,7 @@ private:
     std::mutex socket_mutex_;
 
     // queue
-    std::queue<std::string> message_queue_;
+    std::queue<MessageCommand> message_queue_;
     std::mutex queue_mutex_;
     std::condition_variable queue_cv_;
 

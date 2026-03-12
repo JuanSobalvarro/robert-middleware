@@ -4,6 +4,9 @@ MODULE MainModule
     CONST string IP_ADDR := "127.0.0.1"; 
     CONST num PORT := 5000;
     
+    VAR speeddata move_speed := v100;
+    VAR zonedata move_zone := fine;
+    
     PROC main()
         TPWrite "Initiating at origin...";
         MoveAbsJ ZERO, v100, fine, tool0;

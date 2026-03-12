@@ -40,8 +40,6 @@ private:
 
     std::vector<std::unique_ptr<Robot>> robots_;
 
-    CommandFactory cmd_factory;
-
     void loop_();
 };
 

@@ -51,26 +51,38 @@ bool parse_target_csv(const std::string& csv, RobTarget& out_target) {
                        static_cast<int>(v[8]),
                        static_cast<int>(v[9]),
                        static_cast<unsigned int>(v[10]));
+    RobJoint ext_joint(v[11], v[12], v[13], v[14], v[15], v[16]);
 
-    out_target = RobTarget(pos, ori, conf);
+    out_target = RobTarget(pos, ori, conf, ext_joint);
     return true;
 }
 
-bool parse_joints_csv(const std::string& csv, std::array<double, 6>& out_joints) {
+bool parse_joints_csv(const std::string& csv, RobJoint& out_joints) {
     const std::vector<std::string> items = split(csv, ',');
     if (items.size() != 6) {
         return false;
     }
 
-    for (std::size_t i = 0; i < out_joints.size(); ++i) {
-        out_joints[i] = std::stod(items[i]);
-    }
+    out_joints = RobJoint(
+        std::stod(items[0]), 
+        std::stod(items[1]), 
+        std::stod(items[2]), 
+        std::stod(items[3]), 
+        std::stod(items[4]), 
+        std::stod(items[5])
+    );
 
     return true;
 }
 
 } // namespace
 
+/**
+ * @brief Parses a raw string from ZeroMQ into a DecodedCommand.
+ * Expected format: "COMMAND|x,y,z,q1,q2,q3,q4,cf1,cf4,cf6,cfx,ext_j1,ext_j2,ext_j3,ext_j4,ext_j5,ext_j6"
+ * For MoveC: "MOVEC|x1,y1,z1,q11,q12,q13,q14,cf11,cf14,cf16,cfx1,ext_j11,ext_j12,ext_j13,ext_j14,ext_j15,ext_j16|x2,y2,z2,q21,q22,q23,q24,cf21,cf24,cf26,cfx2,ext_j21,ext_j22,ext_j23,ext_j24,ext_j25,ext_j26"
+ * For MoveAbsJ: "MOVEABSJ|j1,j2,j3,j4,j5,j6,ext_j1,ext_j2,ext_j3,ext_j4,ext_j5,ext_j6"
+ */
 DecodedCommand Parser::parse_string(const std::string& raw_msg) {
     DecodedCommand decoded;
 
@@ -95,7 +107,7 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                     break;
                 }
 
-                decoded.targets.push_back(target);
+                decoded.target = new RobTarget(target);
                 break;
             }
 
@@ -112,13 +124,13 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                     break;
                 }
 
-                decoded.targets.push_back(cir_target);
-                decoded.targets.push_back(to_target);
+                decoded.target = new RobTarget(cir_target);
+                decoded.target2 = new RobTarget(to_target);
                 break;
             }
 
             case CommandType::MOVE_ABS_J:
-                if (parts.size() != 2 || !parse_joints_csv(parts[1], decoded.joints)) {
+                if (parts.size() != 2 || !parse_joints_csv(parts[1], *decoded.joints)) {
                     decoded.type = CommandType::UNKNOWN;
                 }
                 break;

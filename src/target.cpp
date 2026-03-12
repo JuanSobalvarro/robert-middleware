@@ -66,24 +66,23 @@ BinRobConfigData RobConfigData::to_bin() const {
 
 // --- RobExtJoint ---
 RobJoint::RobJoint(float j1, float j2, float j3, float j4, float j5, float j6) 
-    : ext_joint_{j1, j2, j3, j4, j5, j6} {}
-RobJoint::RobJoint(const RobJoint& other) : ext_joint_(other.ext_joint_) {}
+    : joints_{j1, j2, j3, j4, j5, j6} {}
+RobJoint::RobJoint(const RobJoint& other) : joints_(other.joints_) {}
 // Default to 9E9 (not used in RAPID)
-RobJoint::RobJoint() : ext_joint_{9e9f, 9e9f, 9e9f, 9e9f, 9e9f, 9e9f} {}
 RobJoint::~RobJoint() {}
 
-void RobJoint::set_ext_joint(float j1, float j2, float j3, float j4, float j5, float j6) {
-    ext_joint_ = {j1, j2, j3, j4, j5, j6};
+void RobJoint::set_joints(float j1, float j2, float j3, float j4, float j5, float j6) {
+    joints_ = {j1, j2, j3, j4, j5, j6};
 }
 
 BinRobJoint RobJoint::to_bin() const {
     BinRobJoint bin;
-    std::memcpy(&bin.j1, &ext_joint_[0], 4);
-    std::memcpy(&bin.j2, &ext_joint_[1], 4);
-    std::memcpy(&bin.j3, &ext_joint_[2], 4);
-    std::memcpy(&bin.j4, &ext_joint_[3], 4);
-    std::memcpy(&bin.j5, &ext_joint_[4], 4);
-    std::memcpy(&bin.j6, &ext_joint_[5], 4);
+    std::memcpy(&bin.j1, &joints_[0], 4);
+    std::memcpy(&bin.j2, &joints_[1], 4);
+    std::memcpy(&bin.j3, &joints_[2], 4);
+    std::memcpy(&bin.j4, &joints_[3], 4);
+    std::memcpy(&bin.j5, &joints_[4], 4);
+    std::memcpy(&bin.j6, &joints_[5], 4);
     return bin;
 }
 

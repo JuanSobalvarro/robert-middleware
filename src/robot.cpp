@@ -19,7 +19,7 @@ void robert::Robot::start_session()
     worker_thread_ = std::thread(&Robot::worker_loop, this);
 }
 
-std::string robert::Robot::send_and_receive(const std::string& message)
+std::string robert::Robot::send_and_receive(const MessageCommand& message)
 {
     std::lock_guard<std::mutex> lock(socket_mutex_);
 
@@ -28,7 +28,7 @@ std::string robert::Robot::send_and_receive(const std::string& message)
         throw std::runtime_error("Robot session is not active");
     }
 
-    if (!send_string(message))
+    if (!send_message(message))
     {
         throw std::runtime_error("Failed to send command to robot");
     }
@@ -36,20 +36,18 @@ std::string robert::Robot::send_and_receive(const std::string& message)
     return receive_string();
 }
 
-bool robert::Robot::send_string(const std::string& message)
+bool robert::Robot::send_message(const MessageCommand& message)
 {
     std::size_t total_sent = 0;
-    const char* data = message.c_str();
-    const std::size_t size = message.size();
+    const char* data_ptr = reinterpret_cast<const char*>(&message);
 
-    while (total_sent < size)
+    while (total_sent < sizeof(message))
     {
-        const ssize_t bytes_sent = send(socket_fd_, data + total_sent, size - total_sent, 0);
+        ssize_t bytes_sent = send(socket_fd_, data_ptr + total_sent, sizeof(message) - total_sent, 0);
         if (bytes_sent <= 0)
         {
-            return false;
+            return false; // send failed
         }
-
         total_sent += static_cast<std::size_t>(bytes_sent);
     }
 
@@ -87,7 +85,7 @@ void robert::Robot::stop_session()
     }
 }
 
-void robert::Robot::queue_message(const std::string& message)
+void robert::Robot::queue_message(const MessageCommand& message)
 {
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
@@ -150,7 +148,7 @@ void robert::Robot::worker_loop()
             }
         }
 
-        std::string message;
+        MessageCommand message;
 
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
@@ -165,7 +163,7 @@ void robert::Robot::worker_loop()
 
         try
         {
-            std::cout << "[ROBOT::WORKER] Sending command: " << message << std::endl;
+            // std::cout << "[ROBOT::WORKER] Sending command: " << CommandFactory::full_command_string(message) << std::endl;
             const std::string response = send_and_receive(message);
             if (response.empty())
             {

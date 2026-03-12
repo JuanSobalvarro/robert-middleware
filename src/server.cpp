@@ -130,28 +130,13 @@ void robert::Server::loop_()
                 break;                
             // default are robot ready commands
             default:
-                const std::string robot_command = cmd_factory.full_command_string(
-                    decoded.type,
-                    decoded.targets,
-                    decoded.speed,
-                    decoded.precision,
-                    decoded.joints
-                );
+                const MessageCommand robot_command = create_binary_message(decoded);
 
-                if (robot_command.empty())
-                {   
-                    response = "ERR_CMD_GEN";
-                }
-                else if (robots_.empty())
-                {
-                    response = "ERR_NO_ROBOTS";
-                }
-                else
-                {
-                    std::cout << "[C++ to Robot] Queueing: " << robot_command << std::endl;
-                    robots_[0]->queue_message(robot_command);
-                    response = "ACK_QUEUED";
-                }
+                const std::string robot_command_str = full_command_string(decoded);
+
+                std::cout << "[C++ to Robot] Queueing: " << robot_command_str << std::endl;
+                robots_[0]->queue_message(robot_command);
+                response = "ACKUWU"
             }
         }
         catch (const std::exception& e)
