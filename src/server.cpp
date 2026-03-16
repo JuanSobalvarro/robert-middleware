@@ -131,7 +131,7 @@ void robert::Server::loop_()
                 break;                
             // default are robot commands
             default:
-                std::cout << "[DEBUG] Reached default command" << std::endl;
+                std::cout << "[DEBUG] Reached default command (moves)" << std::endl;
                 if (robots_.empty()) {
                     response = "ERR_NOROBOT";
                     break;

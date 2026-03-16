@@ -64,10 +64,12 @@ BinRobConfigData RobConfigData::to_bin() const {
     return bin;
 }
 
-// --- RobExtJoint ---
+// --- RobJoint ---
 RobJoint::RobJoint(float j1, float j2, float j3, float j4, float j5, float j6) 
     : joints_{j1, j2, j3, j4, j5, j6} {}
+
 RobJoint::RobJoint(const RobJoint& other) : joints_(other.joints_) {}
+
 // Default to 9E9 (not used in RAPID)
 RobJoint::~RobJoint() {}
 

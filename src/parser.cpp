@@ -35,7 +35,7 @@ std::vector<std::string> split(const std::string& input, char delimiter) {
 
 bool parse_target_csv(const std::string& csv, RobTarget& out_target) {
     const std::vector<std::string> items = split(csv, ',');
-    if (items.size() != 11) {
+    if (items.size() != 17) {
         return false;
     }
 
@@ -53,24 +53,28 @@ bool parse_target_csv(const std::string& csv, RobTarget& out_target) {
                        static_cast<unsigned int>(v[10]));
     RobJoint ext_joint(v[11], v[12], v[13], v[14], v[15], v[16]);
 
-    out_target = RobTarget(pos, ori, conf, ext_joint);
+    out_target = {pos, ori, conf, ext_joint};
     return true;
 }
 
 bool parse_joints_csv(const std::string& csv, RobJoint& out_joints) {
+
     const std::vector<std::string> items = split(csv, ',');
+
     if (items.size() != 6) {
         return false;
     }
 
-    out_joints = RobJoint(
-        std::stod(items[0]), 
-        std::stod(items[1]), 
-        std::stod(items[2]), 
-        std::stod(items[3]), 
-        std::stod(items[4]), 
-        std::stod(items[5])
-    );
+    out_joints = {
+        std::stof(items[0]), 
+        std::stof(items[1]), 
+        std::stof(items[2]), 
+        std::stof(items[3]), 
+        std::stof(items[4]), 
+        std::stof(items[5])
+    };
+
+    std::cout << "[Parser] Parsed joints successfully" << std::endl;
 
     return true;
 }
@@ -101,13 +105,10 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                     break;
                 }
 
-                RobTarget target;
-                if (!parse_target_csv(parts[1], target)) {
+                if (!parse_target_csv(parts[1], *decoded.target)) {
                     decoded.type = CommandType::UNKNOWN;
                     break;
                 }
-
-                decoded.target = new RobTarget(target);
                 break;
             }
 
@@ -124,8 +125,8 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                     break;
                 }
 
-                decoded.target = new RobTarget(cir_target);
-                decoded.target2 = new RobTarget(to_target);
+                decoded.target = cir_target;
+                decoded.target2 = to_target;
                 break;
             }
 
@@ -148,7 +149,7 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                     decoded.type = CommandType::UNKNOWN;
                     break;
                 }
-                decoded.zone = parts[1];
+                decoded.zone = std::stoi(parts[1]);
                 break;
 
             case CommandType::EXIT:

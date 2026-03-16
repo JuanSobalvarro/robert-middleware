@@ -3,7 +3,7 @@
 
 namespace robert {
 
-enum Zones {
+enum Zone {
     FINE = 0,
     Z1 = 1,
     Z5 = 2,

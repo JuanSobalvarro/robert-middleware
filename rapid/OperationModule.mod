@@ -10,7 +10,7 @@ MODULE OperationModule
             CASE "MoveL":
                 IF Present(target_coords) THEN
                     TPWrite "Action: MoveL to : " + ValToStr(target_coords);
-                    MoveL target_coords, v100, fine, tool0;
+                    MoveL target_coords, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveL.";
                     SendResponse "NACK|MISSING_COORDS";
@@ -22,7 +22,7 @@ MODULE OperationModule
             CASE "MoveJ":
                 IF Present(target_coords) THEN
                     TPWrite "Action: MoveJ to : " + ValToStr(target_coords);
-                    MoveJ target_coords, v100, fine, tool0;
+                    MoveJ target_coords, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveJ.";
                     SendResponse "NACK|MISSING_COORDS";
@@ -34,7 +34,7 @@ MODULE OperationModule
             CASE "MoveAbsJ":
                 IF Present(joint_target) THEN
                     TPWrite "Action: MoveAbsJ to : " + ValToStr(joint_target);
-                    MoveAbsJ joint_target, v100, fine, tool0;
+                    MoveAbsJ joint_target, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveAbsJ.";
                     SendResponse "NACK|MISSING_COORDS";
@@ -47,7 +47,7 @@ MODULE OperationModule
                 IF Present(target_coords) AND Present(circular_extra_target) THEN
                     TPWrite "Action: MoveC to : " + ValToStr(target_coords) + " via " + ValToStr(circular_extra_target);
 
-                    MoveC circular_extra_target, target_coords, v100, fine, tool0;
+                    MoveC circular_extra_target, target_coords, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveC.";
                     SendResponse "NACK|MISSING_COORDS";
@@ -76,20 +76,20 @@ MODULE OperationModule
             CASE "ORIGIN":
                 TPWrite "Action: Moving to origin...";
                 
-                MoveJ origin, v1000, fine, tool0; 
+                MoveJ origin, move_speed, move_zone, tool0; 
 
                 SendResponse "ACK|ORIGIN";
                 
             CASE "HOME":
                 TPWrite "Action: Executing Home sequence...";
                 ! A standard MoveAbsJ is best for homing, bypassing singularity checks
-                MoveAbsJ ZERO, v100, fine, tool0;
+                MoveAbsJ ZERO, move_speed, move_zone, tool0;
                 
                 SendResponse "ACK|HOME";
 
             ! unknown command
             DEFAULT:
-                TPWrite "Error: Operation not defined for command: " + action_cmd;
+                TPWrite "Error: Operation not demove_zoned for command: " + action_cmd;
 
                 SendResponse "NACK|UNKNOWN_COMMAND";
         ENDTEST

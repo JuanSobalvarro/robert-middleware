@@ -6,6 +6,7 @@
 #include <sstream>
 #include "target.hpp"
 #include "command.hpp"
+#include "values.hpp"
 
 namespace robert {
 

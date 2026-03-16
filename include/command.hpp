@@ -4,7 +4,10 @@
 #include <array>
 #include <vector>
 #include <cstdint>
+#include <optional>
+
 #include "target.hpp"
+#include "values.hpp"
 
 namespace robert
 {
@@ -45,16 +48,18 @@ struct MessageCommand {
 
 struct DecodedCommand {
     CommandType type{CommandType::UNKNOWN};
-    RobTarget* target; // For L, J
-    RobTarget* target2; // For C (second point)
-    RobJoint* joints; // For MoveAbsJ, we can store the joint values here
-    RobJoint* ext_joints; // For MoveAbsJ, we can store the external joint values here
+    std::optional<RobTarget> target; // For L, J
+    std::optional<RobTarget> target2; // For C (second point)
+    std::optional<RobJoint> joints; // For MoveAbsJ, we can store the joint values here
+    std::optional<RobJoint> ext_joints; // For MoveAbsJ, we can store the external joint values here
     double speed{0.0};
-    std::string zone;
+    int zone;
 };
 
 std::string full_command_string(const DecodedCommand& cmd);
 
 MessageCommand create_binary_message(const DecodedCommand& decoded);
+
+std::string cmd_to_name(CommandType type);
 
 } // namespace robert

@@ -39,11 +39,13 @@ MODULE ParsingModule
 
         IF command_str = "SetSpeed" THEN
             UnpackRawBytes raw_buffer, 180, speed \Float4;
+            TPWrite "[PARSING] Speed: " + ValToStr(speed);
             ExecuteAction command_str, \speed := speed;
         ENDIF
 
         IF command_str = "SetZone" THEN
             UnpackRawBytes raw_buffer, 184, zone_id \IntX := USINT;
+            TPWrite "[PARSING] Zone ID: " + ValToStr(zone_id);
             ExecuteAction command_str, \zone := value_to_zone(zone_id);
             RETURN;
         ENDIF
