@@ -62,4 +62,6 @@ MessageCommand create_binary_message(const DecodedCommand& decoded);
 
 std::string cmd_to_name(CommandType type);
 
+std::string message_command_to_string(const MessageCommand& msg); // debugging function to visualize the binary message content
+
 } // namespace robert

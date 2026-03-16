@@ -35,7 +35,7 @@ std::vector<std::string> split(const std::string& input, char delimiter) {
 
 bool parse_target_csv(const std::string& csv, RobTarget& out_target) {
     const std::vector<std::string> items = split(csv, ',');
-    if (items.size() != 17) {
+    if (items.size() != 11) {
         return false;
     }
 
@@ -51,7 +51,8 @@ bool parse_target_csv(const std::string& csv, RobTarget& out_target) {
                        static_cast<int>(v[8]),
                        static_cast<int>(v[9]),
                        static_cast<unsigned int>(v[10]));
-    RobJoint ext_joint(v[11], v[12], v[13], v[14], v[15], v[16]);
+    // RobJoint ext_joint(v[11], v[12], v[13], v[14], v[15], v[16]);
+    RobJoint ext_joint; // default to 9E9 for all joints, meaning not used in RAPID
 
     out_target = {pos, ori, conf, ext_joint};
     return true;
@@ -101,14 +102,17 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
             case CommandType::MOVE_L:
             case CommandType::MOVE_J: {
                 if (parts.size() != 2) {
+                    std::cout << "[Parser] Invalid parameter count for MOVE_L/MOVE_J: " << parts.size() - 1 << std::endl;
                     decoded.type = CommandType::UNKNOWN;
                     break;
                 }
-
-                if (!parse_target_csv(parts[1], *decoded.target)) {
+                RobTarget target;
+                if (!parse_target_csv(parts[1], target)) {
+                    std::cout << "[Parser] Failed to parse target CSV for MOVE_L/MOVE_J" << std::endl;
                     decoded.type = CommandType::UNKNOWN;
                     break;
                 }
+                decoded.target = target;
                 break;
             }
 
@@ -130,19 +134,28 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                 break;
             }
 
-            case CommandType::MOVE_ABS_J:
-                if (parts.size() != 2 || !parse_joints_csv(parts[1], *decoded.joints)) {
-                    decoded.type = CommandType::UNKNOWN;
-                }
-                break;
-
-            case CommandType::SET_SPEED:
+            case CommandType::MOVE_ABS_J: {
                 if (parts.size() != 2) {
                     decoded.type = CommandType::UNKNOWN;
                     break;
                 }
-                decoded.speed = std::stod(parts[1]);
+
+                RobJoint joints;
+                if (!parse_joints_csv(parts[1], joints)) {
+                    decoded.type = CommandType::UNKNOWN;
+                }
+                decoded.joints = joints;
                 break;
+            }
+
+            case CommandType::SET_SPEED: {
+                if (parts.size() != 2) {
+                    decoded.type = CommandType::UNKNOWN;
+                    break;
+                }
+                decoded.speed = std::stof(parts[1]);
+                break;
+            }
 
             case CommandType::SET_ZONE:
                 if (parts.size() != 2 || parts[1].empty()) {
@@ -157,6 +170,7 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                 break;
 
             default:
+                std::cout << "[Parser] Unknown command type: " << parts[0] << std::endl;
                 decoded.type = CommandType::UNKNOWN;
                 break;
         }

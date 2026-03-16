@@ -9,7 +9,6 @@ MODULE OperationModule
                 SendResponse "ACK|PONGUWU";
             CASE "MoveL":
                 IF Present(target_coords) THEN
-                    TPWrite "Action: MoveL to : " + ValToStr(target_coords);
                     MoveL target_coords, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveL.";
@@ -21,7 +20,6 @@ MODULE OperationModule
                 
             CASE "MoveJ":
                 IF Present(target_coords) THEN
-                    TPWrite "Action: MoveJ to : " + ValToStr(target_coords);
                     MoveJ target_coords, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveJ.";

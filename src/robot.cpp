@@ -159,40 +159,40 @@ bool Robot::attempt_connection() {
 
 
     // validation through a ping
-
-    try
-    {
-        MessageCommand ping;
-        ping.command_id = CommandType::PING;
+    // try
+    // {
+    //     MessageCommand ping;
+    //     ping.command_id = CommandType::PING;
         
-        std::cout << "[ROBOT] Sending handshake ping..." << std::endl;
-        if (!send_message(ping))
-            throw std::runtime_error("Ping send failed");
+    //     std::cout << "[ROBOT] Sending handshake ping..." << std::endl;
+    //     if (!send_message(ping))
+    //         throw std::runtime_error("Ping send failed");
 
         
-        std::cout << "[ROBOT] Waiting for handshake response..." << std::endl;
-        std::string response = receive_string();
+    //     std::cout << "[ROBOT] Waiting for handshake response..." << std::endl;
+    //     std::string response = receive_string();
 
-        std::cout << "[ROBOT] Handshake response: " << response << std::endl;
+    //     std::cout << "[ROBOT] Handshake response: " << response << std::endl;
 
-        if (response != "ACK|PONGUWU")
-            throw std::runtime_error("Unexpected handshake response");
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "[ROBOT] Handshake failed: " << e.what() << std::endl;
+    //     if (response != "ACK|PONGUWU")
+    //         throw std::runtime_error("Unexpected handshake response");
+    // }
+    // catch (const std::exception& e)
+    // {
+    //     std::cerr << "[ROBOT] Handshake failed: " << e.what() << std::endl;
 
-        close(socket_fd_);
-        socket_fd_ = -1;
-        return false;
-    }
+    //     close(socket_fd_);
+    //     socket_fd_ = -1;
+    //     return false;
+    // }
+
+    // std::cout << "[ROBOT] Handshake successful\n";
 
     connected_ = true;
 
-    std::cout << "[ROBOT] Handshake successful\n";
-
     return true;
 }
+
 void Robot::worker_loop()
 {
     std::cout << "[ROBOT::WORKER] Worker thread started for Robot at "

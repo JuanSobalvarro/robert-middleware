@@ -94,7 +94,7 @@ void robert::Server::loop_()
     running_ = true;
     while(running_)
     {
-        std::cout << "UWU" << std::endl;
+        // std::cout << "UWU" << std::endl;
         zmq::message_t request;
 
         // recv blocks until we receive a message
@@ -143,6 +143,7 @@ void robert::Server::loop_()
                 }
 
                 const MessageCommand robot_command = create_binary_message(decoded);
+                std::cout << "[DEBUG] Created binary message for robot: " << std::endl << message_command_to_string(robot_command) << std::endl;
                 const std::string robot_command_str = full_command_string(decoded);
 
                 std::cout << "[C++ to Robot] Queueing: " << robot_command_str << std::endl;

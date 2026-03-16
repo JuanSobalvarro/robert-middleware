@@ -91,4 +91,22 @@ MessageCommand create_binary_message(const DecodedCommand& decoded)
     return msg;
 }
 
+std::string message_command_to_string(const MessageCommand& msg) {
+    std::stringstream ss;
+    ss << "Command ID: " << static_cast<int>(msg.command_id) << " (" << cmd_to_name(static_cast<CommandType>(msg.command_id)) << ")\n";
+    ss << "Target 1: " << msg.target.position.x << ", " << msg.target.position.y << ", " << msg.target.position.z << "\n";
+    ss << "Target 2: " << msg.target2.position.x << ", " << msg.target2.position.y << ", " << msg.target2.position.z << "\n";
+    ss << "Orientation: " << msg.target.orientation.q1 << ", " << msg.target.orientation.q2 << ", " << msg.target.orientation.q3 << ", " << msg.target.orientation.q4 << "\n";
+    ss << "Config Data: " << msg.target.config_data.cf1 << ", " << msg.target.config_data.cf4 << ", " << msg.target.config_data.cf6 << ", " << msg.target.config_data.cfx << "\n";
+    ss << "Joints: " << msg.joints.j1 << ", " << msg.joints.j2 << ", " << msg.joints.j3 << ", "
+       << msg.joints.j4 << ", " << msg.joints.j5 << ", " << msg.joints.j6 << "\n";
+    ss << "External Joints: " << msg.target.ext_joint.j1 << ", " << msg.target.ext_joint.j2 << ", " << msg.target.ext_joint.j3 << ", "
+       << msg.target.ext_joint.j4 << ", " << msg.target.ext_joint.j5 << ", " << msg.target.ext_joint.j6 << "\n";
+    ss << "Speed: " << msg.speed << "\n";
+    ss << "Zone id: " << static_cast<int>(msg.zone) << "\n";
+
+    return ss.str();
+}
+
+//
 } // namespace robert
