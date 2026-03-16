@@ -149,6 +149,8 @@ MODULE ParsingModule
                 RETURN "SetZone";
             CASE 0x06:
                 RETURN "Exit";
+            CASE 0x07:
+                RETURN "PING";
             DEFAULT:
                 RETURN "UNKNOWN";
         ENDTEST
