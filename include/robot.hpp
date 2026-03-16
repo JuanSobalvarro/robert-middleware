@@ -4,53 +4,69 @@
 #include <mutex>
 #include <condition_variable>
 #include <thread>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include <queue>
 #include <iostream>
 #include <stdexcept>
 #include <atomic>
+#include <future>
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 #include "command.hpp"
 
 namespace robert {
 
+struct RobotWorkItem {
+    MessageCommand command;
+    std::shared_ptr<std::promise<std::string>> response_promise;
+};
+
 class Robot {
 public:
     Robot(const std::string& ip, int port);
-    ~Robot();
+    ~Robot() noexcept;
+
+    Robot(const Robot&) = delete;
+    Robot& operator=(const Robot&) = delete;
 
     void start_session();
     void stop_session();
 
-    void queue_message(const MessageCommand& message);
-    
+    bool is_connected() const;
+
+    // Thread-safe
+    std::future<std::string> queue_message(const MessageCommand& message);
+
 private:
-    void worker_loop(); // thread function to handle sending/receiving messages
-    
+    void worker_loop();
+
     bool send_message(const MessageCommand& message);
     std::string send_and_receive(const MessageCommand& message);
     std::string receive_string();
 
+    bool attempt_connection();
+
     std::string ip_;
     int port_;
+
+    // socket owned by Robot
     int socket_fd_{-1};
-    
-    // threading
+
+    // worker thread
     std::atomic<bool> running_{false};
     std::thread worker_thread_;
     std::mutex socket_mutex_;
 
-    // queue
-    std::queue<MessageCommand> message_queue_;
+    // message queue
+    std::queue<RobotWorkItem> message_queue_;
     std::mutex queue_mutex_;
     std::condition_variable queue_cv_;
 
-    // connection
+    // connection state
     std::atomic<bool> connected_{false};
-    bool attempt_connection();
 };
 
 } // namespace robert

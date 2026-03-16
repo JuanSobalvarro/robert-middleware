@@ -50,7 +50,7 @@ struct DecodedCommand {
     RobJoint* joints; // For MoveAbsJ, we can store the joint values here
     RobJoint* ext_joints; // For MoveAbsJ, we can store the external joint values here
     double speed{0.0};
-    std::string precision;
+    std::string zone;
 };
 
 std::string full_command_string(const DecodedCommand& cmd);

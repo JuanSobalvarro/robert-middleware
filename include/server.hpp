@@ -8,6 +8,7 @@
 #include <fstream>
 #include <algorithm>
 #include <thread>
+#include <future>
 #include <zmq.hpp>
 
 #include "parser.hpp"

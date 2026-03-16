@@ -143,15 +143,14 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
                 decoded.speed = std::stod(parts[1]);
                 break;
 
-            case CommandType::SET_PRECISION:
+            case CommandType::SET_ZONE:
                 if (parts.size() != 2 || parts[1].empty()) {
                     decoded.type = CommandType::UNKNOWN;
                     break;
                 }
-                decoded.precision = parts[1];
+                decoded.zone = parts[1];
                 break;
 
-            case CommandType::STOP:
             case CommandType::EXIT:
             case CommandType::PING:
                 break;
@@ -174,8 +173,7 @@ CommandType Parser::string_to_type(const std::string& cmd_str) {
     if (cmd_str == "MOVEC")    return CommandType::MOVE_C;
     if (cmd_str == "MOVEABSJ") return CommandType::MOVE_ABS_J;
     if (cmd_str == "SETSPEED") return CommandType::SET_SPEED;
-    if (cmd_str == "SETPRECISION") return CommandType::SET_PRECISION;
-    if (cmd_str == "STOP")     return CommandType::STOP;
+    if (cmd_str == "SETZONE") return CommandType::SET_ZONE;
     if (cmd_str == "EXIT")     return CommandType::EXIT;
     if (cmd_str == "PING")     return CommandType::PING;
     return CommandType::UNKNOWN;

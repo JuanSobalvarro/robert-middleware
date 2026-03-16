@@ -94,6 +94,7 @@ void robert::Server::loop_()
     running_ = true;
     while(running_)
     {
+        std::cout << "UWU" << std::endl;
         zmq::message_t request;
 
         // recv blocks until we receive a message
@@ -128,15 +129,32 @@ void robert::Server::loop_()
             case CommandType::PING:
                 response = "PONGUWU";
                 break;                
-            // default are robot ready commands
+            // default are robot commands
             default:
-                const MessageCommand robot_command = create_binary_message(decoded);
+                std::cout << "[DEBUG] Reached default command" << std::endl;
+                if (robots_.empty()) {
+                    response = "ERR_NOROBOT";
+                    break;
+                }
 
+                if (robots_[0]->is_connected() == false) {
+                    response = "ERR_ROBOTDISCONNECTED";
+                    break;
+                }
+
+                const MessageCommand robot_command = create_binary_message(decoded);
                 const std::string robot_command_str = full_command_string(decoded);
 
                 std::cout << "[C++ to Robot] Queueing: " << robot_command_str << std::endl;
-                robots_[0]->queue_message(robot_command);
-                response = "ACKUWU"
+                std::future<std::string> future_ack = robots_[0]->queue_message(robot_command);
+
+                if (future_ack.wait_for(std::chrono::seconds(30)) != std::future_status::ready) {
+                    response = "ERR_TIMEOUT";
+                    break;
+                }
+                
+                response = future_ack.get();
+                std::cout << "[Robot ACK] " << response << std::endl;
             }
         }
         catch (const std::exception& e)
