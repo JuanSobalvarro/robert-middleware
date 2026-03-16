@@ -19,6 +19,8 @@ MODULE ServerModule
             TPWrite "Server listening on port " + NumToStr(PORT, 0) + "...";
             SocketAccept listener_socket, client_socket \Time:=WAIT_MAX;
             TPWrite "Client connected!";
+
+            client_connected := TRUE;
             
             HandleClient;
             
@@ -46,6 +48,8 @@ MODULE ServerModule
             ! Receive up to 1024 bytes into the raw buffer
             SocketReceive client_socket \RawData := raw_buffer \Time:=WAIT_MAX;
             bytes_received := RawBytesLen(raw_buffer);
+
+            TPWrite "Received " + NumToStr(bytes_received, 0) + " bytes from client.";
             
             IF bytes_received > 0 THEN
                 parse_message raw_buffer, bytes_received;
