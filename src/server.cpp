@@ -150,7 +150,7 @@ void robert::Server::loop_()
                 std::cout << "[C++ to Robot] Queueing: " << robot_command_str << std::endl;
                 std::future<std::string> future_ack = robots_[0]->queue_message(robot_command);
 
-                if (future_ack.wait_for(std::chrono::seconds(30)) != std::future_status::ready) {
+                if (future_ack.wait_for(std::chrono::seconds(35)) != std::future_status::ready) {
                     response = "ERR_TIMEOUT";
                     break;
                 }

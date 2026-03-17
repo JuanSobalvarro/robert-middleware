@@ -110,6 +110,8 @@ std::string Robot::receive_string()
 {
     char buffer[256]{};
 
+    setsockopt(socket_fd_, SOL_SOCKET, SO_RCVTIMEO, &socket_timeout_ms_, sizeof(socket_timeout_ms_));
+
     const ssize_t bytes_received =
         recv(socket_fd_, buffer, sizeof(buffer) - 1, 0);
 
