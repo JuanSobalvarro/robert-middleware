@@ -8,27 +8,11 @@
 namespace robert
 {
 
-std::string cmd_to_name(CommandType type)
-{
-    switch (type)
-    {
-        case CommandType::MOVE_L: return "MoveL";
-        case CommandType::MOVE_J: return "MoveJ";
-        case CommandType::MOVE_C: return "MoveC";
-        case CommandType::MOVE_ABS_J: return "MoveAbsJ";
-        case CommandType::SET_SPEED: return "SetSpeed";
-        case CommandType::SET_ZONE: return "SetZone";
-        case CommandType::EXIT: return "Exit";
-        case CommandType::PING: return "Ping";
-        default: return "Unknown";
-    }
-}
-
 std::string full_command_string(const DecodedCommand& cmd)
 {
     std::stringstream ss;
 
-    ss << "[" << cmd_to_name(cmd.type) << "] ";
+    ss << "[" << type_to_string(cmd.type) << "] ";
 
     if (!cmd.target.has_value()) {
         ss << "(No target data) ";
@@ -102,7 +86,7 @@ MessageCommand create_binary_message(const DecodedCommand& decoded)
 
 std::string message_command_to_string(const MessageCommand& msg) {
     std::stringstream ss;
-    ss << "Command ID: " << static_cast<int>(msg.command_id) << " (" << cmd_to_name(static_cast<CommandType>(msg.command_id)) << ")\n";
+    ss << "Command ID: " << static_cast<int>(msg.command_id) << " (" << type_to_string(static_cast<CommandType>(msg.command_id)) << ")\n";
     ss << "Target 1: " << msg.target.position.x << ", " << msg.target.position.y << ", " << msg.target.position.z << "\n";
     ss << "Target 2: " << msg.target2.position.x << ", " << msg.target2.position.y << ", " << msg.target2.position.z << "\n";
     ss << "Orientation: " << msg.target.orientation.q1 << ", " << msg.target.orientation.q2 << ", " << msg.target.orientation.q3 << ", " << msg.target.orientation.q4 << "\n";
@@ -130,6 +114,36 @@ std::string message_command_to_hexstring(const MessageCommand& msg) {
         hexStr += std::format("{:02x}", b);
     }
     return hexStr;
+}
+
+CommandType string_to_type(const std::string& cmd_str) {
+    if (cmd_str == "MOVEL")    return CommandType::MOVE_L;
+    if (cmd_str == "MOVEJ")    return CommandType::MOVE_J;
+    if (cmd_str == "MOVEC")    return CommandType::MOVE_C;
+    if (cmd_str == "MOVEABSJ") return CommandType::MOVE_ABS_J;
+    if (cmd_str == "SETSPEED") return CommandType::SET_SPEED;
+    if (cmd_str == "SETZONE") return CommandType::SET_ZONE;
+    if (cmd_str == "EXIT")     return CommandType::EXIT;
+    if (cmd_str == "PING")     return CommandType::PING;
+    if (cmd_str == "PINGR")    return CommandType::PINGR;
+    if (cmd_str == "ZERO")     return CommandType::ZERO;
+    return CommandType::UNKNOWN;
+}
+
+std::string type_to_string(CommandType type) {
+    switch (type) {
+        case CommandType::MOVE_L: return "MOVEL";
+        case CommandType::MOVE_J: return "MOVEJ";
+        case CommandType::MOVE_C: return "MOVEC";
+        case CommandType::MOVE_ABS_J: return "MOVEABSJ";
+        case CommandType::SET_SPEED: return "SETSPEED";
+        case CommandType::SET_ZONE: return "SETZONE";
+        case CommandType::EXIT: return "EXIT";
+        case CommandType::PING: return "PING";
+        case CommandType::PINGR: return "PINGR";
+        case CommandType::ZERO: return "ZERO";
+        default: return "UNKNOWN";
+    }
 }
 
 //

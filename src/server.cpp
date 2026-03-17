@@ -128,7 +128,10 @@ void robert::Server::loop_()
                 break;
             case CommandType::PING:
                 response = "PONGUWU";
-                break;                
+                break;
+            case CommandType::PINGR: {
+                
+            }                
             // default are robot commands
             default:
                 std::cout << "[DEBUG] Reached default command (moves)" << std::endl;

@@ -22,6 +22,8 @@ enum CommandType : uint8_t // Explicitly 1 byte
     SET_ZONE     = 0x05,
     EXIT         = 0x06,
     PING         = 0x07,
+    PINGR        = 0x08,
+    ZERO         = 0x09,
     UNKNOWN      = 0xFF
 };
 
@@ -66,11 +68,12 @@ std::string full_command_string(const DecodedCommand& cmd);
 
 MessageCommand create_binary_message(const DecodedCommand& decoded);
 
-std::string cmd_to_name(CommandType type);
-
 std::string message_command_to_string(const MessageCommand& msg); // debugging function to visualize the binary message content
 
 std::string message_command_to_hexstring(const MessageCommand& msg); // debugging function to visualize the raw bytes of the message
+
+CommandType string_to_type(const std::string& cmd_str);
+std::string type_to_string(CommandType type);
 
 //
 } // namespace robert

@@ -17,9 +17,6 @@ public:
      * Expected format: "COMMAND|x,y,z,q1,q2,q3,q4,cf1,cf4,cf6,cfx"
      */
     static DecodedCommand parse_string(const std::string& raw_msg);
-
-private:
-    static CommandType string_to_type(const std::string& cmd_str);
 };
 
 } // namespace robert

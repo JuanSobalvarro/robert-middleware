@@ -167,6 +167,8 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
 
             case CommandType::EXIT:
             case CommandType::PING:
+            case CommandType::PINGR:
+            case CommandType::ZERO:
                 break;
 
             default:
@@ -182,16 +184,5 @@ DecodedCommand Parser::parse_string(const std::string& raw_msg) {
     return decoded;
 }
 
-CommandType Parser::string_to_type(const std::string& cmd_str) {
-    if (cmd_str == "MOVEL")    return CommandType::MOVE_L;
-    if (cmd_str == "MOVEJ")    return CommandType::MOVE_J;
-    if (cmd_str == "MOVEC")    return CommandType::MOVE_C;
-    if (cmd_str == "MOVEABSJ") return CommandType::MOVE_ABS_J;
-    if (cmd_str == "SETSPEED") return CommandType::SET_SPEED;
-    if (cmd_str == "SETZONE") return CommandType::SET_ZONE;
-    if (cmd_str == "EXIT")     return CommandType::EXIT;
-    if (cmd_str == "PING")     return CommandType::PING;
-    return CommandType::UNKNOWN;
-}
-
+//
 } // namespace robert

@@ -19,4 +19,30 @@ MODULE ValueModule
                 RETURN z30;
         ENDTEST 
     ENDFUNC
+    FUNC string command_to_string(num cmd)
+        TEST cmd
+            CASE 0x00:
+                RETURN "MoveL";
+            CASE 0x01:
+                RETURN "MoveJ";
+            CASE 0x02:
+                RETURN "MoveC";
+            CASE 0x03:
+                RETURN "MoveAbsJ";
+            CASE 0x04:
+                RETURN "SetSpeed";
+            CASE 0x05:
+                RETURN "SetZone";
+            CASE 0x06:
+                RETURN "Exit";
+            CASE 0x07:
+                RETURN "PING";
+            CASE 0x08:
+                RETURN "PINGR";
+            CASE 0x09:
+                RETURN "ZERO";
+            DEFAULT:
+                RETURN "UNKNOWN";
+        ENDTEST
+    ENDFUNC
 ENDMODULE

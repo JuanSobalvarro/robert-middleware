@@ -6,7 +6,9 @@ MODULE OperationModule
         
         TEST action_cmd
             CASE "PING":
-                SendResponse "ACK|PONGUWU";
+                SendResponse "NACK|This ping should be answered at the middleware level, not here!";
+            CASE "PINGR":
+                SendResponse "ACK|PONGRUWU";
             CASE "MoveL":
                 IF Present(target_coords) THEN
                     MoveL target_coords, move_speed, move_zone, tool0;
@@ -78,19 +80,10 @@ MODULE OperationModule
                 ! Implementation for setting zone
                 SendResponse "ACK|SetZone";
 
-            CASE "ORIGIN":
-                TPWrite "Action: Moving to origin...";
-                
-                MoveJ origin, move_speed, move_zone, tool0; 
-
-                SendResponse "ACK|ORIGIN";
-                
-            CASE "HOME":
-                TPWrite "Action: Executing Home sequence...";
-                ! A standard MoveAbsJ is best for homing, bypassing singularity checks
+            CASE "ZERO":
+                TPWrite "Action: Moving to zero position...";
                 MoveAbsJ ZERO, move_speed, move_zone, tool0;
-                
-                SendResponse "ACK|HOME";
+                SendResponse "ACK|ZERO";
 
             ! unknown command
             DEFAULT:
