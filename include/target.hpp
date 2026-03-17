@@ -48,7 +48,7 @@ struct BinRobConfigData {
     int32_t cf1; // conf are signed ints
     int32_t cf4;
     int32_t cf6;
-    uint8_t cfx; // cfx is unsigned int
+    uint32_t cfx; // cfx is unsigned int, why int32 even though cfx is between 0 and 7, because of 4 byte alignment
 };
 
 /**
@@ -74,13 +74,15 @@ struct BinRobJoint {
  * @struct BinRobTarget
  * @brief Represents a complete target for the robot, including position, orientation, configuration data, and external joint angles.
  * The position is represented by a BinRobPosition struct, the orientation by a BinRobOrientation struct, the configuration data by a BinRobConfigData struct, and the external joint angles by a BinRobJoint struct. This structure allows for efficient binary packing of all necessary target information for robotic commands.
- * Size: 68 bytes (12 for position + 16 for orientation + 16 for config data + 24 for external joints)
+ * 
+ * Size: 65 bytes (12 for position + 16 for orientation + 13 for config data + 24 for external joints)
+ * 
  * Note: The BinRobTarget structure is designed to encapsulate all the necessary information for a robot target in a compact binary format. The position and orientation define the robot's pose in space, while the configuration data provides additional context about the robot's state. The external joint angles can be used for commands that require specific joint configurations, such as MoveAbsJ.
  */
 struct BinRobTarget {
     BinRobPosition position; // 12 bytes
     BinRobOrientation orientation; // 16 bytes
-    BinRobConfigData config_data; // 16 bytes
+    BinRobConfigData config_data; // 13 bytes
     BinRobJoint ext_joint; // 24 bytes
 };
 

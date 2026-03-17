@@ -26,7 +26,7 @@ struct RobotWorkItem {
 
 class Robot {
 public:
-    Robot(const std::string& ip, int port);
+    Robot(const std::string& ip, int port, int timeout_ms = 5000);
     ~Robot() noexcept;
 
     Robot(const Robot&) = delete;
@@ -54,6 +54,7 @@ private:
 
     // socket owned by Robot
     int socket_fd_{-1};
+    int socket_timeout_ms_{5000}; // 5 seconds timeout for send/recv
 
     // worker thread
     std::atomic<bool> running_{false};

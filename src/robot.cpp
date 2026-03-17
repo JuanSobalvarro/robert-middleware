@@ -2,8 +2,8 @@
 
 namespace robert {
 
-Robot::Robot(const std::string& ip, int port)
-    : ip_(ip), port_(port)
+Robot::Robot(const std::string& ip, int port, int timeout_ms)
+    : ip_(ip), port_(port), socket_timeout_ms_(timeout_ms)
 {
 }
 
@@ -130,8 +130,8 @@ bool Robot::attempt_connection() {
         return false;
 
     struct timeval timeout{};
-    timeout.tv_sec = 2;
-    timeout.tv_usec = 0;
+    timeout.tv_sec = socket_timeout_ms_ / 1000;
+    timeout.tv_usec = (socket_timeout_ms_ % 1000) * 1000;
 
     setsockopt(socket_fd_, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
     setsockopt(socket_fd_, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));

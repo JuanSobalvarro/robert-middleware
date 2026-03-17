@@ -1,6 +1,9 @@
 #include "command.hpp"
 #include <sstream>
 #include <iomanip>
+#include <span>
+#include <cstring>
+#include <format>
 
 namespace robert
 {
@@ -48,25 +51,31 @@ std::string full_command_string(const DecodedCommand& cmd)
  */
 MessageCommand create_binary_message(const DecodedCommand& decoded)
 {
-    MessageCommand msg{};
+    MessageCommand msg{}; // please remember to always zeroed a structure before putting data 
+    std::memset(&msg, 0, sizeof(MessageCommand)); // this is just to be extra sure, we don't want any uninitialized data
     msg.command_id = static_cast<uint8_t>(decoded.type);
 
     if (decoded.type == CommandType::UNKNOWN) {
         return msg;
     }
 
-    if (!decoded.target.has_value() && (decoded.type == CommandType::MOVE_L || decoded.type == CommandType::MOVE_J)) {
-        throw std::invalid_argument("DecodedCommand should have minimum target data.");
+    if (decoded.type == CommandType::MOVE_L || 
+        decoded.type == CommandType::MOVE_J || 
+        decoded.type == CommandType::MOVE_C) 
+    {
+        if (decoded.target.has_value()) {
+            msg.target = decoded.target->to_bin();
+        } else {
+            throw std::invalid_argument("MoveL, MoveJ, and MoveC commands require target data.");
+        }
     }
-
-    if (!decoded.target2.has_value() && decoded.type == CommandType::MOVE_C) {
-        throw std::invalid_argument("MoveC command requires a second target.");
-    }
-
-    msg.target = decoded.target->to_bin();
 
     if (decoded.type == CommandType::MOVE_C) {
-        msg.target2 = decoded.target2->to_bin();
+        if (decoded.target2.has_value()) {
+            msg.target2 = decoded.target2->to_bin();
+        } else {
+            throw std::invalid_argument("MoveC command requires a second target.");
+        }
     }
     
     if (decoded.type == CommandType::MOVE_ABS_J) {
@@ -81,7 +90,7 @@ MessageCommand create_binary_message(const DecodedCommand& decoded)
     }
 
     if (decoded.type == CommandType::SET_SPEED) {
-        msg.speed = decoded.speed;
+        msg.speed = static_cast<uint16_t>(decoded.speed);
     }
 
     if (decoded.type == CommandType::SET_ZONE) {
@@ -106,6 +115,21 @@ std::string message_command_to_string(const MessageCommand& msg) {
     ss << "Zone id: " << static_cast<int>(msg.zone) << "\n";
 
     return ss.str();
+}
+
+// 
+std::string message_command_to_hexstring(const MessageCommand& msg) {
+    auto bytes = std::span<const unsigned char>(
+        reinterpret_cast<const unsigned char*>(&msg), sizeof(MessageCommand));
+    
+    std::string hexStr;
+    hexStr.reserve(bytes.size() * 2); // Optimization: pre-allocate memory
+
+    for (unsigned char b : bytes) {
+        // {:02x} means: 0-padded, 2-width, lowercase hex
+        hexStr += std::format("{:02x}", b);
+    }
+    return hexStr;
 }
 
 //

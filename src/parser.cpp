@@ -47,10 +47,10 @@ bool parse_target_csv(const std::string& csv, RobTarget& out_target) {
 
     RobPosition pos(v[0], v[1], v[2]);
     RobOrientation ori(v[3], v[4], v[5], v[6]);
-    RobConfigData conf(static_cast<int>(v[7]),
-                       static_cast<int>(v[8]),
-                       static_cast<int>(v[9]),
-                       static_cast<unsigned int>(v[10]));
+    RobConfigData conf(static_cast<int32_t>(v[7]),
+                       static_cast<int32_t>(v[8]),
+                       static_cast<int32_t>(v[9]),
+                       static_cast<uint8_t>(v[10]));
     // RobJoint ext_joint(v[11], v[12], v[13], v[14], v[15], v[16]);
     RobJoint ext_joint; // default to 9E9 for all joints, meaning not used in RAPID
 

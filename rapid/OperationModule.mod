@@ -55,16 +55,23 @@ MODULE OperationModule
                 SendResponse "ACK|MoveC";
 
             CASE "SetSpeed":
-                IF Present(joint_target) THEN 
+                IF Present(speed) THEN 
+                    IF speed < 5 OR speed > MaxRobSpeed() THEN
+                        TPWrite "Error: Speed value out of range (5 - " + ValToStr(MaxRobSpeed()) + "). Received: " + ValToStr(speed);
+                        SendResponse "NACK|SPEED_OUT_OF_RANGE";
+                        RETURN;
+                    ENDIF
+
                     TPWrite "Action: Setting speed to : " + NumToStr(speed, 0) + " mm/s";
                     move_speed.v_tcp := speed;
+
+                    SendResponse "ACK|SetSpeed";
+                    RETURN;
                 ELSE
                     TPWrite "Error: Missing speed value for SetSpeed.";
                     SendResponse "NACK|MISSING_SPEED";
                     RETURN;
                 ENDIF
-
-                SendResponse "ACK|SetSpeed";
 
             CASE "SetZone":
                 TPWrite "Action: Setting zone...";

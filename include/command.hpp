@@ -26,22 +26,28 @@ enum CommandType : uint8_t // Explicitly 1 byte
 };
 
 #pragma pack(push, 1)
+// !IMPORTANT ALWAYS FOLLOW 4 byte ALIGNMENT FOR ALL FIELDS IN THE STRUCTURES BELOW, OTHERWISE THE BINARY PROTOCOL WILL BE BROKEN
 /**
  * @struct MessageCommand
  * @brief 
  * command_id (1 byte)
- * target (48 bytes)
- * target2 (48 bytes, only for MoveC)
- * joints ()
+ * zone (1 byte, only for SetZone)
+ * speed (2 bytes, only for SetSpeed)
+ * target (68 bytes)
+ * target2 (68 bytes, only for MoveC)
+ * joints (24 bytes, only for MoveAbsJ)
+ * ext_joints (24 bytes, only for MoveAbsJ)
+ * Total size: 185 bytes
  */
 struct MessageCommand {
+    // first command, zone and speed to make sure we have a 4 byte alignment for the following float fields
     uint8_t command_id;
+    uint8_t zone;
+    uint16_t speed;
     BinRobTarget target;   // Used for L, J, and AbsJ (via ext_joint field)
     BinRobTarget target2;  // Used only for the second point in MoveC
     BinRobJoint joints;     // Used for MoveAbsJ to specify joint angles
     BinRobJoint ext_joints; // Used for specify external joint angles
-    uint32_t speed;
-    uint8_t zone;
 };
 
 #pragma pack(pop)
@@ -52,7 +58,7 @@ struct DecodedCommand {
     std::optional<RobTarget> target2; // For C (second point)
     std::optional<RobJoint> joints; // For MoveAbsJ, we can store the joint values here
     std::optional<RobJoint> ext_joints; // For MoveAbsJ, we can store the external joint values here
-    double speed{0.0};
+    float speed{0.0};
     int zone;
 };
 
@@ -64,4 +70,7 @@ std::string cmd_to_name(CommandType type);
 
 std::string message_command_to_string(const MessageCommand& msg); // debugging function to visualize the binary message content
 
+std::string message_command_to_hexstring(const MessageCommand& msg); // debugging function to visualize the raw bytes of the message
+
+//
 } // namespace robert
