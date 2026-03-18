@@ -45,9 +45,9 @@ MODULE OperationModule
             
             CASE "MoveC":
                 IF Present(target_coords) AND Present(circular_extra_target) THEN
-                    TPWrite "Action: MoveC to : " + ValToStr(target_coords) + " via " + ValToStr(circular_extra_target);
+                    ! TPWrite "Action: MoveC to : " + ValToStr(target_coords) + " via " + ValToStr(circular_extra_target);
 
-                    MoveC circular_extra_target, target_coords, move_speed, move_zone, tool0;
+                    MoveC target_coords, circular_extra_target, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveC.";
                     SendResponse "NACK|MISSING_COORDS";
@@ -77,7 +77,9 @@ MODULE OperationModule
 
             CASE "SetZone":
                 TPWrite "Action: Setting zone...";
-                ! Implementation for setting zone
+                
+                move_zone := zone;
+
                 SendResponse "ACK|SetZone";
 
             CASE "ZERO":

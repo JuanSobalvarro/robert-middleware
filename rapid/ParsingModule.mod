@@ -5,12 +5,6 @@ MODULE ParsingModule
     ! target.y (bytes 10-17)
     ! target.z (bytes 18-25)
     ! target.rx (bytes 26-33)
-    ! target2.x (bytes 34-41)
-    ! target2.y (bytes 42-49)
-    ! target2.z (bytes 50-57)
-    ! target2.rx (bytes 58-65)
-    ! target2.ry (bytes 66-73)
-    ! target2.rz (bytes 74-81)
     ! ... y asi xd
     VAR num command_id;
     VAR string command_str;
@@ -89,23 +83,27 @@ MODULE ParsingModule
         ENDIF
 
         ! robtarget 2 for Move C
+
         UnpackRawBytes raw_buffer, 73, parsed_target2.trans.x \Float4;
-        UnpackRawBytes raw_buffer, 68, parsed_target2.trans.y \Float4;
-        UnpackRawBytes raw_buffer, 72, parsed_target2.trans.z \Float4;
-        UnpackRawBytes raw_buffer, 76, parsed_target2.rot.q1 \Float4;
-        UnpackRawBytes raw_buffer, 80, parsed_target2.rot.q2 \Float4;
-        UnpackRawBytes raw_buffer, 84, parsed_target2.rot.q3 \Float4;
-        UnpackRawBytes raw_buffer, 88, parsed_target2.rot.q4 \Float4;
-        UnpackRawBytes raw_buffer, 92, parsed_target2.robconf.cf1 \IntX := DINT;
-        UnpackRawBytes raw_buffer, 96, parsed_target2.robconf.cf4 \IntX := DINT;
-        UnpackRawBytes raw_buffer, 100, parsed_target2.robconf.cf6 \IntX := DINT;
-        UnpackRawBytes raw_buffer, 104, parsed_target2.robconf.cfx \IntX := USINT;
-        UnpackRawBytes raw_buffer, 105, parsed_target2.extax.eax_a \Float4;
-        UnpackRawBytes raw_buffer, 109, parsed_target2.extax.eax_b \Float4;
-        UnpackRawBytes raw_buffer, 113, parsed_target2.extax.eax_c \Float4;
-        UnpackRawBytes raw_buffer, 117, parsed_target2.extax.eax_d \Float4;
-        UnpackRawBytes raw_buffer, 121, parsed_target2.extax.eax_e \Float4;
-        UnpackRawBytes raw_buffer, 125, parsed_target2.extax.eax_f \Float4;
+        UnpackRawBytes raw_buffer, 77, parsed_target2.trans.y \Float4;
+        UnpackRawBytes raw_buffer, 81, parsed_target2.trans.z \Float4;
+
+        UnpackRawBytes raw_buffer, 85, parsed_target2.rot.q1 \Float4;
+        UnpackRawBytes raw_buffer, 89, parsed_target2.rot.q2 \Float4;
+        UnpackRawBytes raw_buffer, 93, parsed_target2.rot.q3 \Float4;
+        UnpackRawBytes raw_buffer, 97, parsed_target2.rot.q4 \Float4;
+
+        UnpackRawBytes raw_buffer, 101, parsed_target2.robconf.cf1 \IntX := DINT;
+        UnpackRawBytes raw_buffer, 105, parsed_target2.robconf.cf4 \IntX := DINT;
+        UnpackRawBytes raw_buffer, 109, parsed_target2.robconf.cf6 \IntX := DINT;
+        UnpackRawBytes raw_buffer, 113, parsed_target2.robconf.cfx \IntX := UDINT;
+
+        UnpackRawBytes raw_buffer, 117, parsed_target2.extax.eax_a \Float4;
+        UnpackRawBytes raw_buffer, 121, parsed_target2.extax.eax_b \Float4;
+        UnpackRawBytes raw_buffer, 125, parsed_target2.extax.eax_c \Float4;
+        UnpackRawBytes raw_buffer, 129, parsed_target2.extax.eax_d \Float4;
+        UnpackRawBytes raw_buffer, 133, parsed_target2.extax.eax_e \Float4;
+        UnpackRawBytes raw_buffer, 137, parsed_target2.extax.eax_f \Float4;
 
         IF command_str = "MoveC" THEN
             ExecuteAction command_str, \target_coords := parsed_target, \circular_extra_target := parsed_target2;
@@ -119,6 +117,7 @@ MODULE ParsingModule
         UnpackRawBytes raw_buffer, 141, parsed_joint_target.robax.rax_4 \Float4;
         UnpackRawBytes raw_buffer, 145, parsed_joint_target.robax.rax_5 \Float4;
         UnpackRawBytes raw_buffer, 149, parsed_joint_target.robax.rax_6 \Float4;
+        ! external
         UnpackRawBytes raw_buffer, 153, parsed_joint_target.extax.eax_a \Float4;
         UnpackRawBytes raw_buffer, 157, parsed_joint_target.extax.eax_b \Float4;
         UnpackRawBytes raw_buffer, 161, parsed_joint_target.extax.eax_c \Float4;
