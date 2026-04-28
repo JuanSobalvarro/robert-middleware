@@ -21,7 +21,7 @@ namespace robert {
 
 struct RobotWorkItem {
     RapidRequest command;
-    std::shared_ptr<std::promise<std::string>> response_promise;
+    std::shared_ptr<std::promise<std::vector<uint8_t>>> response_promise;
 };
 
 class Robot {
@@ -38,14 +38,14 @@ public:
     bool is_connected() const;
 
     // Thread-safe
-    std::future<std::string> queue_request(const RapidRequest& request);
+    std::future<std::vector<uint8_t>> queue_request(const RapidRequest& request);
 
 private:
     void worker_loop();
 
     bool send_request(const RapidRequest& request);
-    std::string send_and_receive(const RapidRequest& request);
-    std::string receive_string();
+    std::vector<uint8_t> receive_buffer();
+    std::vector<uint8_t> send_and_receive(const RapidRequest& request);
 
     bool attempt_connection();
 

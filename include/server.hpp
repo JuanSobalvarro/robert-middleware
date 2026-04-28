@@ -15,6 +15,7 @@
 #include "command.hpp"
 #include "robot.hpp"
 #include "utils.hpp"
+#include "protocol/protocol.pb.h" 
 
 namespace robert
 {
@@ -40,6 +41,8 @@ private:
     zmq::socket_t socket_;
 
     std::vector<std::unique_ptr<Robot>> robots_;
+
+    protocol::ServerResponse process_request(const DecodedRequest& decoded);
 
     void loop_();
 };

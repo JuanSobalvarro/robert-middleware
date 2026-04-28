@@ -25,6 +25,8 @@ public:
     static RobTargetBridge translate_robtarget(const protocol::RobTarget& target);
 
     static JointTargetBridge translate_jointtarget(const protocol::JointTarget& target);
+
+    static bool unpack_robot_status(const std::vector<uint8_t>& raw_data, protocol::RobotStatus* pb_state);
 };
 
 } // namespace robert

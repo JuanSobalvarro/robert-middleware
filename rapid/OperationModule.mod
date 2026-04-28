@@ -89,7 +89,7 @@ MODULE OperationModule
 
             CASE "GETSTATUS":
                 TPWrite "Action: Getting robot status...";
-                SendRobotStatus();
+                HandleGetState;
 
             ! unknown command
             DEFAULT:

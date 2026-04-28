@@ -48,13 +48,13 @@ bool Robot::is_connected() const
     return connected_;
 }
 
-std::future<std::string> Robot::queue_request(const RapidRequest& request)
+std::future<std::vector<uint8_t>> Robot::queue_request(const RapidRequest& request)
 {
     if (!running_)
         throw std::runtime_error("Robot session not started");
 
-    auto promise = std::make_shared<std::promise<std::string>>();
-    std::future<std::string> future = promise->get_future();
+    auto promise = std::make_shared<std::promise<std::vector<uint8_t>>>();
+    std::future<std::vector<uint8_t>> future = promise->get_future();
 
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
@@ -65,7 +65,7 @@ std::future<std::string> Robot::queue_request(const RapidRequest& request)
     return future;
 }
 
-std::string Robot::send_and_receive(const RapidRequest& request)
+std::vector<uint8_t> Robot::send_and_receive(const RapidRequest& request)
 {
     std::lock_guard<std::mutex> lock(socket_mutex_);
 
@@ -75,7 +75,7 @@ std::string Robot::send_and_receive(const RapidRequest& request)
     if (!send_request(request))
         throw std::runtime_error("Failed to send command to robot");
 
-    return receive_string();
+    return receive_buffer();
 }
 
 bool Robot::send_request(const RapidRequest& request)
@@ -106,7 +106,7 @@ bool Robot::send_request(const RapidRequest& request)
     return true;
 }
 
-std::string Robot::receive_string()
+std::vector<uint8_t> Robot::receive_buffer()
 {
     char buffer[256]{};
 
@@ -118,7 +118,7 @@ std::string Robot::receive_string()
     if (bytes_received <= 0)
         throw std::runtime_error("Failed to receive response from robot");
 
-    return std::string(buffer, static_cast<std::size_t>(bytes_received));
+    return std::vector<uint8_t>(buffer, buffer + static_cast<std::size_t>(bytes_received));
 }
 
 bool Robot::attempt_connection() {
@@ -172,7 +172,7 @@ bool Robot::attempt_connection() {
 
         
     //     std::cout << "[ROBOT] Waiting for handshake response..." << std::endl;
-    //     std::string response = receive_string();
+    //     std::string response = receive_buffer();
 
     //     std::cout << "[ROBOT] Handshake response: " << response << std::endl;
 
@@ -244,7 +244,7 @@ void Robot::worker_loop()
 
         try
         {
-            const std::string response =
+            const std::vector<uint8_t> response =
                 send_and_receive(work_item.command);
 
             if (response.empty())
@@ -252,12 +252,10 @@ void Robot::worker_loop()
                 std::cerr << "[ROBOT::WORKER] Empty response received"
                           << std::endl;
 
-                work_item.response_promise->set_value("ERR: empty response");
+                std::string error_msg = "ERR: empty response";
+                work_item.response_promise->set_value(std::vector<uint8_t>{error_msg.begin(), error_msg.end()});
                 continue;
             }
-
-            std::cout << "[ROBOT::WORKER] Response: "
-                      << response << std::endl;
 
             work_item.response_promise->set_value(response);
         }
@@ -277,9 +275,9 @@ void Robot::worker_loop()
 
                 connected_ = false;
             }
-
+            std::string error_msg = "ERR: " + std::string(e.what());
             work_item.response_promise->set_value(
-                "ERR: " + std::string(e.what())
+                std::vector<uint8_t>{error_msg.begin(), error_msg.end()}
             );
         }
     }

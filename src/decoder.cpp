@@ -104,5 +104,79 @@ DecodedRequest Decoder::decode_buffer(const std::string& raw_msg) {
     return drequest;
 }
 
+template<typename T>
+inline T read_from_buffer(const std::vector<uint8_t>& buffer, size_t offset) {
+    T value;
+    std::memcpy(&value, buffer.data() + offset, sizeof(T));
+    return value;
+}
+
+bool Decoder::unpack_robot_status(const std::vector<uint8_t>& raw_data, protocol::RobotStatus* pb_state) {
+    // Verificamos el tamaño mínimo esperado (193 bytes)
+    if (raw_data.size() < 162) {
+        std::cerr << "[DECODER] Telemetry payload too small: " << raw_data.size() << " bytes." << std::endl;
+        return false;
+    }
+
+    pb_state->set_op_mode(static_cast<protocol::OpMode>(read_from_buffer<uint8_t>(raw_data, 0)));
+    pb_state->set_speed_override(read_from_buffer<float>(raw_data, 1));
+    pb_state->set_current_speed(read_from_buffer<float>(raw_data, 5));
+    pb_state->set_current_zone(static_cast<protocol::Zone>(read_from_buffer<float>(raw_data, 9)));
+
+    protocol::RobTarget* pb_target = pb_state->mutable_current_target();
+    
+    protocol::Position* pb_pos = pb_target->mutable_trans();
+    pb_pos->set_x(read_from_buffer<float>(raw_data, 13));
+    pb_pos->set_y(read_from_buffer<float>(raw_data, 17));
+    pb_pos->set_z(read_from_buffer<float>(raw_data, 21));
+
+    protocol::Orientation* pb_rot = pb_target->mutable_rot();
+    pb_rot->set_q1(read_from_buffer<float>(raw_data, 25));
+    pb_rot->set_q2(read_from_buffer<float>(raw_data, 29));
+    pb_rot->set_q3(read_from_buffer<float>(raw_data, 33));
+    pb_rot->set_q4(read_from_buffer<float>(raw_data, 37));
+
+    protocol::ConfData* pb_conf = pb_target->mutable_robconf();
+    pb_conf->set_cf1(read_from_buffer<int32_t>(raw_data, 41));
+    pb_conf->set_cf4(read_from_buffer<int32_t>(raw_data, 45));
+    pb_conf->set_cf6(read_from_buffer<int32_t>(raw_data, 49));
+    pb_conf->set_cfx(read_from_buffer<int32_t>(raw_data, 53));
+
+    protocol::ExtJoint* pb_extax = pb_target->mutable_extax();
+    pb_extax->set_eax_a(read_from_buffer<float>(raw_data, 57));
+    pb_extax->set_eax_b(read_from_buffer<float>(raw_data, 61));
+    pb_extax->set_eax_c(read_from_buffer<float>(raw_data, 65));
+    pb_extax->set_eax_d(read_from_buffer<float>(raw_data, 69));
+    pb_extax->set_eax_e(read_from_buffer<float>(raw_data, 73));
+    pb_extax->set_eax_f(read_from_buffer<float>(raw_data, 77));
+
+    protocol::JointTarget* pb_joints = pb_state->mutable_current_joint_target();
+    
+    protocol::RobJoint* pb_robax = pb_joints->mutable_robjoint();
+    pb_robax->set_rax_1(read_from_buffer<float>(raw_data, 81));
+    pb_robax->set_rax_2(read_from_buffer<float>(raw_data, 85));
+    pb_robax->set_rax_3(read_from_buffer<float>(raw_data, 89));
+    pb_robax->set_rax_4(read_from_buffer<float>(raw_data, 93));
+    pb_robax->set_rax_5(read_from_buffer<float>(raw_data, 97));
+    pb_robax->set_rax_6(read_from_buffer<float>(raw_data, 101));
+
+    protocol::ExtJoint* pb_extjoint = pb_joints->mutable_extjoint();
+    pb_extjoint->set_eax_a(read_from_buffer<float>(raw_data, 105));
+    pb_extjoint->set_eax_b(read_from_buffer<float>(raw_data, 109));
+    pb_extjoint->set_eax_c(read_from_buffer<float>(raw_data, 113));
+    pb_extjoint->set_eax_d(read_from_buffer<float>(raw_data, 117));
+    pb_extjoint->set_eax_e(read_from_buffer<float>(raw_data, 121));
+    pb_extjoint->set_eax_f(read_from_buffer<float>(raw_data, 125));
+
+    char str_buf[32];
+    std::memcpy(str_buf, raw_data.data() + 129, 32);
+    pb_state->set_robot_time(std::string(str_buf));
+
+    std::memcpy(str_buf, raw_data.data() + 161, 32);
+    pb_state->set_robot_date(std::string(str_buf));
+
+    return true;
+}
+
 //
 } // namespace robert

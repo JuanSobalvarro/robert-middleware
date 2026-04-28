@@ -19,6 +19,7 @@ MODULE ValueModule
                 RETURN z30;
         ENDTEST 
     ENDFUNC
+
     FUNC num zone_to_value(zonedata zone)
         TEST zone
             CASE fine:
@@ -39,6 +40,7 @@ MODULE ValueModule
                 RETURN 7;
         ENDTEST
     ENDFUNC
+    
     FUNC string command_to_string(num cmd)
         TEST cmd
             CASE 0x00:

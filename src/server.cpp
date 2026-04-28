@@ -91,84 +91,101 @@ void robert::Server::loop_()
     running_ = true;
     while(running_)
     {
-        // std::cout << "UWU" << std::endl;
         zmq::message_t request;
-
-        // recv blocks until we receive a message
         zmq::recv_result_t res = socket_.recv(request, zmq::recv_flags::none);
 
-        if (res.has_value() && (EAGAIN == res.value()))
-        {
-            throw std::runtime_error("[ERROR] There is an erorr with the recv");
+        if (res.has_value() && (EAGAIN == res.value())) {
+            throw std::runtime_error("[ERROR] There is an error with the recv");
         }
         
-        std::string buffer(static_cast<char*>(request.data()), request.size()); // remember this is a protobuf 
-        // std::cout << "[MIDDLEWARE] Received from Client: " << buffer << std::endl;
+        std::string buffer(static_cast<char*>(request.data()), request.size()); 
+        protocol::ServerResponse pb_response;
         
-        // TODO: MODULARIZE THIS SHIT 
-
-        std::string response = "ERR_UWUNKNOWN";
-        
-        try 
-        {
+        try {
             const DecodedRequest decoded = Decoder::decode_buffer(buffer);
             
-            // why the switch? well there is special commands
-            switch (decoded.cmd_type)
-            {
-            case RapidCommandType::UNKNOWN:
-                response = "ERR_PARSE";
-                break;
-            case RapidCommandType::EXIT:
-                response = "OKISUWU";
-                running_ = false;
-                break;
-            case RapidCommandType::PING:
-                response = "PONGUWU";
-                break;
-            case RapidCommandType::PINGR: {
-                
-            }                
-            // default are robot commands
-            default:
-                std::cout << "[DEBUG] Reached default command (moves)" << std::endl;
-                if (robots_.empty()) {
-                    response = "ERR_NOROBOT";
-                    break;
-                }
-
-                if (robots_[0]->is_connected() == false) {
-                    response = "ERR_ROBOTDISCONNECTED";
-                    break;
-                }
-
-                const RapidRequest request = create_rapid_request(decoded);
-                // std::cout << "[DEBUG] Created binary message for robot: " << std::endl << message_command_to_string(robot_command) << std::endl;
-                // std::cout << "[DEBUG] Command as hex: " << message_command_to_hexstring(robot_command) << std::endl;
-                // const std::string robot_command_str = full_command_string(decoded);
-
-                // std::cout << "[C++ to Robot] Queueing: " << robot_command_str << std::endl;
-                std::future<std::string> future_ack = robots_[0]->queue_request(request);
-
-                // TODO: fix timeout only works as much as 35 seconds idk why
-                if (future_ack.wait_for(std::chrono::seconds(35)) != std::future_status::ready) {
-                    response = "ERR_TIMEOUT";
-                    break;
-                }
-                
-                response = future_ack.get();
-                std::cout << "[Robot ACK] " << response << std::endl;
-            }
+            pb_response = process_request(decoded);
         }
-        catch (const std::exception& e)
-        {
+        catch (const std::exception& e) {
             std::cerr << "[SERVER ERROR] " << e.what() << std::endl;
-            response = "ERR_UNKNOWN";
+            pb_response.set_status(protocol::ResponseStatus::ERROR);
+            pb_response.set_message("ERR_SERVER_EXCEPTION");
         }
 
-        zmq::message_t reply(response.size());
-        memcpy(reply.data(), response.data(), response.size());
+        std::string binary_payload;
+        pb_response.SerializeToString(&binary_payload);
+
+        zmq::message_t reply(binary_payload.size());
+        memcpy(reply.data(), binary_payload.data(), binary_payload.size());
         socket_.send(reply, zmq::send_flags::none);
     }
+}
+
+robert::protocol::ServerResponse robert::Server::process_request(const DecodedRequest& decoded)
+{
+    protocol::ServerResponse response;
+
+    switch (decoded.cmd_type)
+    {
+    case RapidCommandType::UNKNOWN:
+        response.set_status(protocol::ResponseStatus::ERROR);
+        response.set_message("Unknown command");
+        break;
+
+    case RapidCommandType::EXIT:
+        response.set_status(protocol::ResponseStatus::SUCCESS);
+        response.set_message("OKISUWU");
+        running_ = false; 
+        break;
+
+    case RapidCommandType::PING:
+        response.set_status(protocol::ResponseStatus::SUCCESS);
+        response.set_message("PONGUWU");
+        break;
+
+    case RapidCommandType::PINGR:
+        response.set_status(protocol::ResponseStatus::SUCCESS);
+        response.set_message("PONGR_NOT_IMPLEMENTED");
+        break;
+
+    default:
+        if (robots_.empty() || !robots_[0]->is_connected()) {
+            response.set_status(protocol::ResponseStatus::ERROR);
+            response.set_message("Robot is disconnected or not available");
+            break;
+        }
+
+        const RapidRequest robot_req = create_rapid_request(decoded);
+        std::future<std::vector<uint8_t>> future_ack = robots_[0]->queue_request(robot_req);
+
+        if (future_ack.wait_for(std::chrono::seconds(35)) != std::future_status::ready) {
+            response.set_status(protocol::ResponseStatus::ERROR);
+            response.set_message("Timeout");
+            break;
+        }
+        
+        std::vector<uint8_t> raw_response = future_ack.get();
+
+        if (decoded.cmd_type == RapidCommandType::GETSTATUS) {
+            protocol::RobotStatus* pb_state = response.mutable_robot_status();
+            
+            if (Decoder::unpack_robot_status(raw_response, pb_state)) {
+                response.set_status(protocol::ResponseStatus::SUCCESS);
+                response.set_message("STATUS_OK");
+            } else {
+                response.set_status(protocol::ResponseStatus::ERROR);
+                std::string err_msg(raw_response.begin(), raw_response.end());
+                response.set_message(err_msg.empty() ? "ERR_INCOMPLETE_TELEMETRY" : err_msg);
+            }
+        } 
+        else {
+            std::string robot_ack(raw_response.begin(), raw_response.end());
+            response.set_status(protocol::ResponseStatus::SUCCESS);
+            response.set_message(robot_ack);
+        }
+        break;
+    }
+
+    return response;
 }
 
