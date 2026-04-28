@@ -19,6 +19,26 @@ MODULE ValueModule
                 RETURN z30;
         ENDTEST 
     ENDFUNC
+    FUNC num zone_to_value(zonedata zone)
+        TEST zone
+            CASE fine:
+                RETURN 0;
+            CASE z0:
+                RETURN 1;
+            CASE z1:
+                RETURN 2;
+            CASE z5:
+                RETURN 3;
+            CASE z10:
+                RETURN 4;
+            CASE z15:
+                RETURN 5;
+            CASE z20:
+                RETURN 6;
+            CASE z30:
+                RETURN 7;
+        ENDTEST
+    ENDFUNC
     FUNC string command_to_string(num cmd)
         TEST cmd
             CASE 0x00:
