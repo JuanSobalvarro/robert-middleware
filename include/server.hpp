@@ -11,9 +11,9 @@
 #include <future>
 #include <zmq.hpp>
 
-#include "parser.hpp"
-#include "robot.hpp"
+#include "decoder.hpp"
 #include "command.hpp"
+#include "robot.hpp"
 #include "utils.hpp"
 
 namespace robert

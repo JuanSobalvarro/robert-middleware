@@ -1,8 +1,5 @@
 #include "server.hpp"
 
-namespace robert
-{
-
 robert::Server::Server(const std::string& ip, int port) 
     : ip_(ip), port_(port), context_(1), socket_(context_, ZMQ_REP)
 {
@@ -105,31 +102,31 @@ void robert::Server::loop_()
             throw std::runtime_error("[ERROR] There is an erorr with the recv");
         }
         
-        std::string msg_str(static_cast<char*>(request.data()), request.size());
-        std::cout << "[MIDDLEWARE] Received from Client: " << msg_str << std::endl;
+        std::string buffer(static_cast<char*>(request.data()), request.size()); // remember this is a protobuf 
+        // std::cout << "[MIDDLEWARE] Received from Client: " << buffer << std::endl;
         
-        // TODO: MODULARIZE THIS SHIT
+        // TODO: MODULARIZE THIS SHIT 
 
         std::string response = "ERR_UWUNKNOWN";
         
         try 
         {
-            const DecodedCommand decoded = Parser::parse_string(msg_str);
+            const DecodedRequest decoded = Decoder::decode_buffer(buffer);
             
             // why the switch? well there is special commands
-            switch (decoded.type)
+            switch (decoded.cmd_type)
             {
-            case CommandType::UNKNOWN:
+            case RapidCommandType::UNKNOWN:
                 response = "ERR_PARSE";
                 break;
-            case CommandType::EXIT:
+            case RapidCommandType::EXIT:
                 response = "OKISUWU";
                 running_ = false;
                 break;
-            case CommandType::PING:
+            case RapidCommandType::PING:
                 response = "PONGUWU";
                 break;
-            case CommandType::PINGR: {
+            case RapidCommandType::PINGR: {
                 
             }                
             // default are robot commands
@@ -145,14 +142,15 @@ void robert::Server::loop_()
                     break;
                 }
 
-                const MessageCommand robot_command = create_binary_message(decoded);
-                std::cout << "[DEBUG] Created binary message for robot: " << std::endl << message_command_to_string(robot_command) << std::endl;
-                std::cout << "[DEBUG] Command as hex: " << message_command_to_hexstring(robot_command) << std::endl;
-                const std::string robot_command_str = full_command_string(decoded);
+                const RapidRequest request = create_rapid_request(decoded);
+                // std::cout << "[DEBUG] Created binary message for robot: " << std::endl << message_command_to_string(robot_command) << std::endl;
+                // std::cout << "[DEBUG] Command as hex: " << message_command_to_hexstring(robot_command) << std::endl;
+                // const std::string robot_command_str = full_command_string(decoded);
 
-                std::cout << "[C++ to Robot] Queueing: " << robot_command_str << std::endl;
-                std::future<std::string> future_ack = robots_[0]->queue_message(robot_command);
+                // std::cout << "[C++ to Robot] Queueing: " << robot_command_str << std::endl;
+                std::future<std::string> future_ack = robots_[0]->queue_request(request);
 
+                // TODO: fix timeout only works as much as 35 seconds idk why
                 if (future_ack.wait_for(std::chrono::seconds(35)) != std::future_status::ready) {
                     response = "ERR_TIMEOUT";
                     break;
@@ -174,4 +172,3 @@ void robert::Server::loop_()
     }
 }
 
-} // namespace robert

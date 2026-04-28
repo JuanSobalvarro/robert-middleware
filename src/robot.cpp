@@ -48,7 +48,7 @@ bool Robot::is_connected() const
     return connected_;
 }
 
-std::future<std::string> Robot::queue_message(const MessageCommand& message)
+std::future<std::string> Robot::queue_request(const RapidRequest& request)
 {
     if (!running_)
         throw std::runtime_error("Robot session not started");
@@ -58,37 +58,37 @@ std::future<std::string> Robot::queue_message(const MessageCommand& message)
 
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
-        message_queue_.push({message, promise});
+        request_queue_.push({request, promise});
     }
 
     queue_cv_.notify_one();
     return future;
 }
 
-std::string Robot::send_and_receive(const MessageCommand& message)
+std::string Robot::send_and_receive(const RapidRequest& request)
 {
     std::lock_guard<std::mutex> lock(socket_mutex_);
 
     if (socket_fd_ == -1)
         throw std::runtime_error("Robot session not active");
 
-    if (!send_message(message))
+    if (!send_request(request))
         throw std::runtime_error("Failed to send command to robot");
 
     return receive_string();
 }
 
-bool Robot::send_message(const MessageCommand& message)
+bool Robot::send_request(const RapidRequest& request)
 {
     std::size_t total_sent = 0;
-    const char* data_ptr = reinterpret_cast<const char*>(&message);
+    const char* data_ptr = reinterpret_cast<const char*>(&request);
 
-    while (total_sent < sizeof(message))
+    while (total_sent < sizeof(request))
     {
         ssize_t bytes_sent = send(
             socket_fd_,
             data_ptr + total_sent,
-            sizeof(message) - total_sent,
+            sizeof(request) - total_sent,
             0
         );
 
@@ -99,7 +99,7 @@ bool Robot::send_message(const MessageCommand& message)
     }
 
     std::cout << "[ROBOT] Sent command ID: "
-              << static_cast<int>(message.command_id)
+              << static_cast<int>(request.command_id)
               << " (total " << total_sent << " bytes)"
               << std::endl;
 
@@ -163,11 +163,11 @@ bool Robot::attempt_connection() {
     // validation through a ping
     // try
     // {
-    //     MessageCommand ping;
+    //     RapidRequest ping;
     //     ping.command_id = CommandType::PING;
         
     //     std::cout << "[ROBOT] Sending handshake ping..." << std::endl;
-    //     if (!send_message(ping))
+    //     if (!send_request(ping))
     //         throw std::runtime_error("Ping send failed");
 
         
@@ -232,14 +232,14 @@ void Robot::worker_loop()
 
             queue_cv_.wait(
                 lock,
-                [this] { return !message_queue_.empty() || !running_; }
+                [this] { return !request_queue_.empty() || !running_; }
             );
 
             if (!running_)
                 break;
 
-            work_item = message_queue_.front();
-            message_queue_.pop();
+            work_item = request_queue_.front();
+            request_queue_.pop();
         }
 
         try

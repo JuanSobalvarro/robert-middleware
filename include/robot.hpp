@@ -20,7 +20,7 @@
 namespace robert {
 
 struct RobotWorkItem {
-    MessageCommand command;
+    RapidRequest command;
     std::shared_ptr<std::promise<std::string>> response_promise;
 };
 
@@ -38,13 +38,13 @@ public:
     bool is_connected() const;
 
     // Thread-safe
-    std::future<std::string> queue_message(const MessageCommand& message);
+    std::future<std::string> queue_request(const RapidRequest& request);
 
 private:
     void worker_loop();
 
-    bool send_message(const MessageCommand& message);
-    std::string send_and_receive(const MessageCommand& message);
+    bool send_request(const RapidRequest& request);
+    std::string send_and_receive(const RapidRequest& request);
     std::string receive_string();
 
     bool attempt_connection();
@@ -61,8 +61,8 @@ private:
     std::thread worker_thread_;
     std::mutex socket_mutex_;
 
-    // message queue
-    std::queue<RobotWorkItem> message_queue_;
+    // request queue
+    std::queue<RobotWorkItem> request_queue_;
     std::mutex queue_mutex_;
     std::condition_variable queue_cv_;
 
