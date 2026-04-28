@@ -27,6 +27,8 @@ RapidCommandType Decoder::proto_cmd_enum2rapid_cmd_enum(protocol::CommandType cm
         return RapidCommandType::PINGR;
     case protocol::CommandType::ZERO:
         return RapidCommandType::ZERO;
+    case protocol::CommandType::GETSTATUS:
+        return RapidCommandType::GETSTATUS;
     default:
         return RapidCommandType::UNKNOWN;
     }

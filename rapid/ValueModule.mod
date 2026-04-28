@@ -61,6 +61,8 @@ MODULE ValueModule
                 RETURN "PINGR";
             CASE 0x09:
                 RETURN "ZERO";
+            CASE 0x0A:
+                RETURN "GETSTATUS";
             DEFAULT:
                 RETURN "UNKNOWN";
         ENDTEST

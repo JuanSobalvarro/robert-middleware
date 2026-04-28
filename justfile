@@ -6,8 +6,8 @@ default:
 [group('building')]
 build:
     @echo "Building RobeRT..."
-    cmake -S . -B build
-    cmake --build build
+    cmake -G Ninja -S . -B build
+    cmake --build build 
 
 [group('building')]
 clean:

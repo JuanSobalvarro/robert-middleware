@@ -28,6 +28,7 @@ enum RapidCommandType : uint8_t // Explicitly 1 byte
     PING         = 0x07,
     PINGR        = 0x08,
     ZERO         = 0x09,
+    GETSTATUS    = 0x0A,
     UNKNOWN      = 0xFF
 };
 

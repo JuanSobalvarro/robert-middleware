@@ -28,6 +28,11 @@ MODULE ParsingModule
 
         TPWrite "[PARSING] Received command ID: " + ValToStr(command_id) + " -> " + command_str;
 
+        IF command_str = "GETSTATUS" THEN
+            ExecuteAction command_str;
+            RETURN;
+        ENDIF
+
         IF command_str = "SetZone" THEN
             UnpackRawBytes raw_buffer, 2, zone_id \IntX := USINT;
             TPWrite "[PARSING] Zone ID: " + ValToStr(zone_id);

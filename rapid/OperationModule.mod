@@ -87,6 +87,10 @@ MODULE OperationModule
                 MoveAbsJ ZERO, move_speed, move_zone, tool0;
                 SendResponse "ACK|ZERO";
 
+            CASE "GETSTATUS":
+                TPWrite "Action: Getting robot status...";
+                SendRobotStatus();
+
             ! unknown command
             DEFAULT:
                 TPWrite "Error: Operation not demove_zoned for command: " + action_cmd;
