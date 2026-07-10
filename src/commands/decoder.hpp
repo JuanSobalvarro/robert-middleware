@@ -1,16 +1,14 @@
 #pragma once
 
 #include <string>
-#include <array>
 #include <vector>
-#include <sstream>
 
-#include "data.hpp"
-#include "command.hpp"
+#include "core/data.hpp"
+#include "commands/commands.hpp"
 
 #include "protocol/protocol.pb.h"
 
-namespace robert {
+namespace robert::commands {
 
 class Decoder {
 public:
@@ -22,9 +20,9 @@ public:
      */
     static DecodedRequest decode_buffer(const std::string& raw_msg);
 
-    static RobTargetBridge translate_robtarget(const protocol::RobTarget& target);
+    static data::RobTargetBridge translate_robtarget(const protocol::RobTarget& target);
 
-    static JointTargetBridge translate_jointtarget(const protocol::JointTarget& target);
+    static data::JointTargetBridge translate_jointtarget(const protocol::JointTarget& target);
 
     static bool unpack_robot_status(const std::vector<uint8_t>& raw_data, protocol::RobotStatus* pb_state);
 };

@@ -1,8 +1,7 @@
 #include <stdexcept>
 #include <string>
-#include <fstream>
 
-#include "server.hpp"
+#include "server/server.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -15,7 +14,7 @@ int main(int argc, char* argv[])
 
     std::cout << "RobertServer running with arguments: " << filepath << std::endl;
 
-    robert::Server server("*", 42069);
+    robert::server::Server server("*", 42069);
     server.load_robots_from_file(filepath);
 
     server.start();
