@@ -19,3 +19,7 @@ run:
     @echo "Running RobeRT..."
     @./build/robert_server.exe ./robots.conf
     @echo "RobeRT stopped."
+
+build_run:
+    just build
+    just run

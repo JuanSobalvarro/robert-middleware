@@ -1,6 +1,7 @@
 #include "server/server.hpp"
 #include "commands/commands.hpp"
 #include "commands/decoder.hpp"
+#include "protocol/protocol.pb.h"
 
 #include <future>
 #include <iostream>
@@ -42,13 +43,15 @@ void Server::start()
     running_ = true;
     server_thread_ = std::thread(&Server::loop_, this);
     robot_worker_thread_ = std::thread(&Server::robot_worker_loop_, this);
-
-    std::cout << "[MIDDLEWARE] ZeroMQ Server listening on " << ip_ << ":" << port_ << std::endl;
 }
 
 void Server::stop()
 {
+    std::cout << "[SERVER] Stopping server" << std::endl;
+
     running_ = false;
+
+    tasker_.stop();
 
     if (server_thread_.joinable())
     {
@@ -98,15 +101,25 @@ void Server::load_robots_from_file(const std::string& filepath)
             robots_.push_back(std::make_unique<robot::Robot>(ip, port));
         }
     }
+}
 
+void Server::wait() {
+    if (server_thread_.joinable()) {
+        server_thread_.join();
+    }
+    if (robot_worker_thread_.joinable()) {
+        robot_worker_thread_.join();
+    }
 }
 
 void Server::loop_()
 {
-    running_ = true;
+    std::cout << "[MIDDLEWARE] ZeroMQ Server listening on " << ip_ << ":" << port_ << std::endl;
     while(running_)
     {
         zmq::message_t request;
+        std::cout << "[SERVER] Loop waiting for recv" << std::endl;
+        // remember that recv is thread blocking
         zmq::recv_result_t res = socket_.recv(request, zmq::recv_flags::none);
 
         if (res.has_value() && (EAGAIN == res.value())) {
@@ -124,13 +137,19 @@ void Server::loop_()
         catch (const std::exception& e) {
             std::cerr << "[SERVER ERROR] " << e.what() << std::endl;
             pb_response.set_status(protocol::ResponseStatus::ERROR);
-            pb_response.set_message("ERR_SERVER_EXCEPTION");
+            pb_response.set_error_message(std::string("ERR_SERVER_EXCEPTION: ") + e.what());
         }
 
         std::string binary_payload;
         bool success = pb_response.SerializeToString(&binary_payload);
         if (!success) {
             std::cerr << "[ERROR] Failed to serialize response" << std::endl;
+
+            std::string fallback = "ERR_SERIALIZATION_FAILED";
+            zmq::message_t reply(fallback.size());
+            memcpy(reply.data(), fallback.data(), fallback.size());
+            socket_.send(reply, zmq::send_flags::none);
+
             continue;
         }
 
@@ -138,16 +157,23 @@ void Server::loop_()
         memcpy(reply.data(), binary_payload.data(), binary_payload.size());
         socket_.send(reply, zmq::send_flags::none);
     }
+    std::cout << "[SERVER] Ended main loop" << std::endl;
 }
 
 void Server::robot_worker_loop_() {
     while (running_) {
         // wait for a task to be added from the server thread
+        std::cout << "[SERVER_WORKER] Waiting for next task" << std::endl;
         auto next_id = tasker_.waitForNextTask();
 
-        if (!next_id) break; // this means the server is shutting down
+        if (!next_id) {
+            std::cout << "[SERVER_WORKER] Received null next id, shutting down robot worker" << std::endl;
+            break;
+        }
 
         task_id_t task_id = *next_id;
+
+        std::cout << "[SERVER_WORKER] Task with id " << task_id << " in operation" << std::endl;
 
         // once we got the task then we start it
         if (!tasker_.startTask(task_id)) continue;
@@ -175,44 +201,47 @@ void Server::robot_worker_loop_() {
             tasker_.failTask(task_id); // Robot disconnected
         }
     }
+    std::cout << "[SERVER_WORKER] Ended loop worker" << std::endl;
 }
 
 protocol::ServerResponse Server::process_request(const commands::DecodedRequest& decoded)
 {
     protocol::ServerResponse response;
 
+    std::cout << "[SERVER] Processing Request" << std::endl;
+
     switch (decoded.cmd_type)
     {
     case commands::RapidCommandType::UNKNOWN:
         response.set_status(protocol::ResponseStatus::ERROR);
-        response.set_message("Unknown command");
+        response.set_error_message("Unknown command");
         break;
 
     case commands::RapidCommandType::EXIT:
         response.set_status(protocol::ResponseStatus::SUCCESS);
-        response.set_message("OKISUWU");
+        response.set_text_payload("OKISUWU");
+        std::cout << "exit called, running_ to false" << std::endl;
         running_ = false;
         break;
 
     case commands::RapidCommandType::PING:
         response.set_status(protocol::ResponseStatus::SUCCESS);
-        response.set_message("PONGUWU");
+        response.set_text_payload("PONGUWU");
         break;
 
     case commands::RapidCommandType::PINGR:
         response.set_status(protocol::ResponseStatus::SUCCESS);
-        response.set_message("PONGR_NOT_IMPLEMENTED");
+        response.set_error_message("PONGR_NOT_IMPLEMENTED");
         break;
 
     case commands::RapidCommandType::CHECK_TASK:
     {
         task_id_t id = decoded.task_id.value();
-
         auto task = tasker_.getTask(id);
 
         if (!task) {
             response.set_status(protocol::ResponseStatus::ERROR);
-            response.set_message("FAILED_OR_NOT_FOUND");
+            response.set_error_message("Task ID not found in registry");
             break;
         }
 
@@ -221,24 +250,41 @@ protocol::ServerResponse Server::process_request(const commands::DecodedRequest&
 
         if (state == TaskState::COMPLETED) {
             response.set_status(protocol::ResponseStatus::SUCCESS);
-            response.set_message(message); // Create this getter too
-            tasker_.removeTask(id); // Clean up memory once client gets the result
+            response.set_task_status(protocol::TaskStatus::TASK_COMPLETED);
+
+            if (task->getRequest().command_id == commands::RapidCommandType::GETSTATUS) {
+                const std::vector<uint8_t> raw_data(message.begin(), message.end());
+                bool success = commands::Decoder::unpack_robot_status(raw_data, response.mutable_robot_status());
+
+                if (!success) {
+                    response.set_status(protocol::ResponseStatus::ERROR);
+                    response.set_error_message("Failed to unpack telemetry payload");
+                }
+            } else {
+                response.set_text_payload(message);
+            }
+            tasker_.removeTask(id);
         }
-        else if (state == TaskState::IN_PROGRESS || state == TaskState::PENDING) {
+        else if (state == TaskState::PENDING) {
             response.set_status(protocol::ResponseStatus::SUCCESS);
-            response.set_message("STILL_RUNNING");
+            response.set_task_status(protocol::TaskStatus::TASK_PENDING);
+        }
+        else if (state == TaskState::IN_PROGRESS) {
+            response.set_status(protocol::ResponseStatus::SUCCESS);
+            response.set_task_status(protocol::TaskStatus::TASK_IN_PROGRESS);
         }
         else {
-            response.set_status(protocol::ResponseStatus::ERROR);
-            response.set_message("FAILED_OR_NOT_FOUND");
+            response.set_status(protocol::ResponseStatus::SUCCESS);
+            response.set_task_status(protocol::TaskStatus::TASK_FAILED);
+            response.set_error_message("Task execution failed at robot controller");
         }
         break;
     }
-
+    // command for robot, so queue it and return success
     default:
         if (robots_.empty() || !robots_[0]->is_connected()) {
             response.set_status(protocol::ResponseStatus::ERROR);
-            response.set_message("Robot is disconnected");
+            response.set_error_message("Robot is disconnected");
             break;
         }
 
@@ -246,9 +292,13 @@ protocol::ServerResponse Server::process_request(const commands::DecodedRequest&
         task_id_t new_task_id = tasker_.addTask(robot_req);
 
         response.set_status(protocol::ResponseStatus::SUCCESS);
-        response.set_message(std::to_string(new_task_id));
+        response.set_task_status(protocol::TaskStatus::TASK_PENDING); // Inicializado como PENDING en lugar de IN_PROGRESS
+        response.set_task_id(new_task_id);
+        response.set_text_payload("uwunyanichan");
         break;
     }
+
+    std::cout << "[SERVER] Correctly returning response" << std::endl;
 
     return response;
 }

@@ -2,6 +2,7 @@
 #include "commands/commands.hpp"
 
 #include <iostream>
+#include <string>
 
 
 namespace robert::commands {
@@ -30,6 +31,8 @@ RapidCommandType Decoder::proto_cmd_enum2rapid_cmd_enum(protocol::CommandType cm
         return RapidCommandType::ZERO;
     case protocol::CommandType::GETSTATUS:
         return RapidCommandType::GETSTATUS;
+    case protocol::CommandType::CHECKTASK:
+        return RapidCommandType::CHECK_TASK;
     default:
         return RapidCommandType::UNKNOWN;
     }
@@ -76,39 +79,44 @@ data::RobTargetBridge Decoder::translate_robtarget(const protocol::RobTarget& ta
  * @brief Parses a raw bytes message (protobuf) received from the client and decodes it into a DecodedRequest structure.
  */
 DecodedRequest Decoder::decode_buffer(const std::string& raw_msg) {
-    protocol::ClientRequest crequest;
-    DecodedRequest drequest;
+    protocol::ClientRequest client_request;
+    DecodedRequest decoded_request;
 
-    if (!crequest.ParseFromString(raw_msg)) {
+    // parse and save the protobuf message
+    if (!client_request.ParseFromString(raw_msg)) {
         std::cerr << "[DECODER] Failed to parse protobuf message from client" << std::endl;
-        return drequest;
+        return decoded_request;
     }
 
+    decoded_request.cmd_type = proto_cmd_enum2rapid_cmd_enum(client_request.command());
 
-    drequest.cmd_type = proto_cmd_enum2rapid_cmd_enum(crequest.command());
-
-    if (crequest.has_target()) {
-        drequest.target = translate_robtarget(crequest.target());
-        std::cout << "[DECODER] Target: " << drequest.target->to_string() << std::endl;
+    if (client_request.has_target()) {
+        decoded_request.target = translate_robtarget(client_request.target());
+        std::cout << "[DECODER] Target: " << decoded_request.target->to_string() << std::endl;
     }
 
-    if (crequest.has_extra_target()) {
-        drequest.extra_target = translate_robtarget(crequest.extra_target());
-        std::cout << "[DECODER] Extra Target: " << drequest.extra_target->to_string() << std::endl;
+    if (client_request.has_extra_target()) {
+        decoded_request.extra_target = translate_robtarget(client_request.extra_target());
+        std::cout << "[DECODER] Extra Target: " << decoded_request.extra_target->to_string() << std::endl;
     }
 
-    if (crequest.has_joint_target()) {
-        drequest.joint_target = translate_jointtarget(crequest.joint_target());
-        std::cout << "[DECODER] Joints: " << drequest.joint_target->to_string() << std::endl;
+    if (client_request.has_joint_target()) {
+        decoded_request.joint_target = translate_jointtarget(client_request.joint_target());
+        std::cout << "[DECODER] Joints: " << decoded_request.joint_target->to_string() << std::endl;
     }
 
-    drequest.speed = crequest.speed();
+    decoded_request.speed = client_request.speed();
 
-    drequest.zone = proto_zone_enum2rapid_zone_enum(crequest.zone());
+    decoded_request.zone = proto_zone_enum2rapid_zone_enum(client_request.zone());
 
-    std::cout << "[DECODER] Speed: " << drequest.speed << ", Zone: " << type_to_string(static_cast<RapidCommandType>(drequest.zone)) << std::endl;
+    // why not has_task_id()? because is a primitive type
+    if (decoded_request.cmd_type == RapidCommandType::CHECK_TASK) {
+        decoded_request.task_id = client_request.task_id();
+    }
 
-    return drequest;
+    std::cout << "[DECODER] Decoded Request:\n" << decoded_request_to_string(decoded_request) << std::endl;
+
+    return decoded_request;
 }
 
 template<typename T>
@@ -175,15 +183,24 @@ bool Decoder::unpack_robot_status(const std::vector<uint8_t>& raw_data, protocol
     pb_extjoint->set_eax_e(read_from_buffer<float>(raw_data, 121));
     pb_extjoint->set_eax_f(read_from_buffer<float>(raw_data, 125));
 
-    char str_buf[32];
-    std::memcpy(str_buf, raw_data.data() + 129, 32);
-    pb_state->set_robot_time(std::string(str_buf));
+    pb_state->set_robot_time(std::string(reinterpret_cast<const char*>(raw_data.data() + 129), 8));
 
-    std::memcpy(str_buf, raw_data.data() + 161, 32);
-    pb_state->set_robot_date(std::string(str_buf));
+    pb_state->set_robot_date(std::string(reinterpret_cast<const char*>(raw_data.data() + 161), 10));
 
     return true;
 }
 
+std::string Decoder::decoded_request_to_string(const DecodedRequest& request) {
+    std::stringstream ss;
+    ss << "cmd_type: " << type_to_string(request.cmd_type) << "\n";
+    if (request.target) ss << "target: " << request.target->to_string() << "\n";
+    if (request.extra_target) ss << "extra_target: " << request.extra_target->to_string() << "\n";
+    if (request.joint_target) ss << "joint_target: " << request.joint_target->to_string() << "\n";
+    if (request.task_id) ss << "task_id: " << *request.task_id << "\n";
+    ss << "speed: " << request.speed << "\n";
+    ss << "zone: " << static_cast<int>(request.zone) << "\n";
+    return ss.str();
+}
+
 //
-} // namespace robert
+} // namespace robert::commands

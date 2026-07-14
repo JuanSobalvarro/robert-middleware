@@ -19,5 +19,7 @@ int main(int argc, char* argv[])
 
     server.start();
 
+    server.wait();
+
     return 0;
 }

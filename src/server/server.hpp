@@ -25,6 +25,8 @@ public:
 
     void load_robots_from_file(const std::string& filepath);
 
+    void wait();
+
 private:
     Tasker tasker_;
     std::string ip_;

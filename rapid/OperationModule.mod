@@ -1,9 +1,9 @@
 MODULE OperationModule
     VAR robtarget destination;
-    
+
     PROC ExecuteAction(string action_cmd, \robtarget target_coords, \robtarget circular_extra_target, \jointtarget joint_target, \num speed, \zonedata zone)
         TPWrite "Action executed at time: " + CTime();
-        
+
         TEST action_cmd
             CASE "PING":
                 SendResponse "NACK|This ping should be answered at the middleware level, not here!";
@@ -19,7 +19,7 @@ MODULE OperationModule
                 ENDIF
 
                 SendResponse "ACK|MoveL";
-                
+
             CASE "MoveJ":
                 IF Present(target_coords) THEN
                     MoveJ target_coords, move_speed, move_zone, tool0;
@@ -33,7 +33,6 @@ MODULE OperationModule
 
             CASE "MoveAbsJ":
                 IF Present(joint_target) THEN
-                    TPWrite "Action: MoveAbsJ to : " + ValToStr(joint_target);
                     MoveAbsJ joint_target, move_speed, move_zone, tool0;
                 ELSE
                     TPWrite "Error: Missing coordinates for MoveAbsJ.";
@@ -42,10 +41,9 @@ MODULE OperationModule
                 ENDIF
 
                 SendResponse "ACK|MoveAbsJ";
-            
+
             CASE "MoveC":
                 IF Present(target_coords) AND Present(circular_extra_target) THEN
-                    ! TPWrite "Action: MoveC to : " + ValToStr(target_coords) + " via " + ValToStr(circular_extra_target);
 
                     MoveC target_coords, circular_extra_target, move_speed, move_zone, tool0;
                 ELSE
@@ -57,7 +55,7 @@ MODULE OperationModule
                 SendResponse "ACK|MoveC";
 
             CASE "SetSpeed":
-                IF Present(speed) THEN 
+                IF Present(speed) THEN
                     IF speed < 5 OR speed > MaxRobSpeed() THEN
                         TPWrite "Error: Speed value out of range (5 - " + ValToStr(MaxRobSpeed()) + "). Received: " + ValToStr(speed);
                         SendResponse "NACK|SPEED_OUT_OF_RANGE";
@@ -77,7 +75,7 @@ MODULE OperationModule
 
             CASE "SetZone":
                 TPWrite "Action: Setting zone...";
-                
+
                 move_zone := zone;
 
                 SendResponse "ACK|SetZone";
@@ -97,7 +95,7 @@ MODULE OperationModule
 
                 SendResponse "NACK|UNKNOWN_COMMAND";
         ENDTEST
-        
+
     ENDPROC
 
 ENDMODULE

@@ -101,6 +101,8 @@ RapidCommandType string_to_type(const std::string& cmd_str) {
     if (cmd_str == "PING")     return RapidCommandType::PING;
     if (cmd_str == "PINGR")    return RapidCommandType::PINGR;
     if (cmd_str == "ZERO")     return RapidCommandType::ZERO;
+    if (cmd_str == "GETSTATUS") return RapidCommandType::GETSTATUS;
+    if (cmd_str == "CHECK_TASK") return RapidCommandType::CHECK_TASK;
     return RapidCommandType::UNKNOWN;
 }
 
@@ -116,6 +118,8 @@ std::string type_to_string(RapidCommandType cmd_type) {
         case RapidCommandType::PING: return "PING";
         case RapidCommandType::PINGR: return "PINGR";
         case RapidCommandType::ZERO: return "ZERO";
+        case RapidCommandType::GETSTATUS: return "GETSTATUS";
+        case RapidCommandType::CHECK_TASK: return "CHECK_TASK";
         default: return "UNKNOWN";
     }
 }

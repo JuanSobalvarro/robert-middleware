@@ -25,6 +25,8 @@ public:
     static data::JointTargetBridge translate_jointtarget(const protocol::JointTarget& target);
 
     static bool unpack_robot_status(const std::vector<uint8_t>& raw_data, protocol::RobotStatus* pb_state);
+
+    static std::string decoded_request_to_string(const DecodedRequest& request);
 };
 
 } // namespace robert
