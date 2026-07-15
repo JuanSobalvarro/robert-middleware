@@ -16,3 +16,7 @@ New-NetFirewallRule -DisplayName "RobeRT-RobotStudio-In" -Direction Inbound -Act
 
 # keywords
 - Hardware Abstraction Layer (HAL)
+
+# About architectural decisions
+- Why separate rapid data types from proto types?
+Simply because we need separation of concerns even though we may have the same data duplicated in both. The rapid structures are for binary data transmission, while the proto structures are for api serialization of messages between a user client and the middleware server. This separation allows us to optimize each for its specific use case without one affecting the other. For example, we can change the proto structures for better API design without worrying about breaking the binary communication, and vice versa.

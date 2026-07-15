@@ -28,6 +28,11 @@ MODULE ParsingModule
 
         TPWrite "[PARSING] Received command ID: " + ValToStr(command_id) + " -> " + command_str;
 
+        IF command_str = "GETSTATUS" THEN
+            ExecuteAction command_str;
+            RETURN;
+        ENDIF
+
         IF command_str = "SetZone" THEN
             UnpackRawBytes raw_buffer, 2, zone_id \IntX := USINT;
             TPWrite "[PARSING] Zone ID: " + ValToStr(zone_id);
@@ -111,19 +116,19 @@ MODULE ParsingModule
         ENDIF
 
         ! now it only remains MoveAbsJ which has a jointtarget and a external joints
-        UnpackRawBytes raw_buffer, 129, parsed_joint_target.robax.rax_1 \Float4;
-        UnpackRawBytes raw_buffer, 133, parsed_joint_target.robax.rax_2 \Float4;
-        UnpackRawBytes raw_buffer, 137, parsed_joint_target.robax.rax_3 \Float4;
-        UnpackRawBytes raw_buffer, 141, parsed_joint_target.robax.rax_4 \Float4;
-        UnpackRawBytes raw_buffer, 145, parsed_joint_target.robax.rax_5 \Float4;
-        UnpackRawBytes raw_buffer, 149, parsed_joint_target.robax.rax_6 \Float4;
+        UnpackRawBytes raw_buffer, 141, parsed_joint_target.robax.rax_1 \Float4;
+        UnpackRawBytes raw_buffer, 145, parsed_joint_target.robax.rax_2 \Float4;
+        UnpackRawBytes raw_buffer, 149, parsed_joint_target.robax.rax_3 \Float4;
+        UnpackRawBytes raw_buffer, 153, parsed_joint_target.robax.rax_4 \Float4;
+        UnpackRawBytes raw_buffer, 157, parsed_joint_target.robax.rax_5 \Float4;
+        UnpackRawBytes raw_buffer, 161, parsed_joint_target.robax.rax_6 \Float4;
         ! external
-        UnpackRawBytes raw_buffer, 153, parsed_joint_target.extax.eax_a \Float4;
-        UnpackRawBytes raw_buffer, 157, parsed_joint_target.extax.eax_b \Float4;
-        UnpackRawBytes raw_buffer, 161, parsed_joint_target.extax.eax_c \Float4;
-        UnpackRawBytes raw_buffer, 165, parsed_joint_target.extax.eax_d \Float4;
-        UnpackRawBytes raw_buffer, 169, parsed_joint_target.extax.eax_e \Float4;
-        UnpackRawBytes raw_buffer, 173, parsed_joint_target.extax.eax_f \Float4;
+        UnpackRawBytes raw_buffer, 165, parsed_joint_target.extax.eax_a \Float4;
+        UnpackRawBytes raw_buffer, 169, parsed_joint_target.extax.eax_b \Float4;
+        UnpackRawBytes raw_buffer, 173, parsed_joint_target.extax.eax_c \Float4;
+        UnpackRawBytes raw_buffer, 177, parsed_joint_target.extax.eax_d \Float4;
+        UnpackRawBytes raw_buffer, 181, parsed_joint_target.extax.eax_e \Float4;
+        UnpackRawBytes raw_buffer, 185, parsed_joint_target.extax.eax_f \Float4;
 
         ExecuteAction command_str, \joint_target := parsed_joint_target;
 

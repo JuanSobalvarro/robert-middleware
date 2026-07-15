@@ -75,4 +75,12 @@ MODULE ServerModule
             TPWrite "Error: Cannot send response, client socket is not connected.";
         ENDIF
     ENDPROC
+
+    PROC SendBinaryResponse(VAR rawbytes bin_data)
+        IF SocketGetStatus(client_socket) = SOCKET_CONNECTED THEN
+            SocketSend client_socket \RawData := bin_data;
+        ELSE
+            TPWrite "Error: Cannot send binary response, client disconnected.";
+        ENDIF
+    ENDPROC
 ENDMODULE

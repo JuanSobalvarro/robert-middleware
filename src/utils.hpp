@@ -1,12 +1,9 @@
 #pragma once
 
 #include <string>
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
 
 
-namespace robert
+namespace robert::utils
 {
 
 std::string trim_copy(const std::string& text);

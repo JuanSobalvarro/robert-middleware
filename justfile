@@ -6,16 +6,20 @@ default:
 [group('building')]
 build:
     @echo "Building RobeRT..."
-    cmake -S . -B build
+    cmake -G Ninja -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
     cmake --build build
 
 [group('building')]
 clean:
     @echo "Cleaning build dir..."
-    cmake --build build --target clean
+    rm -rf build
 
 [group('run')]
 run:
     @echo "Running RobeRT..."
-    @./build/RobeRT_server ./robots.conf
+    @./build/robert_server.exe ./robots.conf
     @echo "RobeRT stopped."
+
+build_run:
+    just build
+    just run

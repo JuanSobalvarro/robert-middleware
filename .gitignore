@@ -11,3 +11,7 @@ default.md
 .venv
 robots.conf
 test.conf
+src/protocol/*.pb.h
+src/protocol/*.pb.cc
+build/
+__cmake*
