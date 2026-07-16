@@ -17,7 +17,7 @@ clean:
 [group('run')]
 run:
     @echo "Running RobeRT..."
-    @./build/robert_server.exe ./robots.conf
+    @./build/robert_server.exe ./robots.conf ./users.conf
     @echo "RobeRT stopped."
 
 build_run:

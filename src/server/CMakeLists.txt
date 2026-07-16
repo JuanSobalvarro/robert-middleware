@@ -2,6 +2,8 @@ add_library(server_lib STATIC
     server.cpp
     sock_comm.cpp
     tasker.cpp
+    session.cpp
+    request_handler.cpp
 )
 
 target_include_directories(server_lib PUBLIC

@@ -33,6 +33,14 @@ RapidCommandType Decoder::proto_cmd_enum2rapid_cmd_enum(protocol::CommandType cm
         return RapidCommandType::GETSTATUS;
     case protocol::CommandType::CHECKTASK:
         return RapidCommandType::CHECK_TASK;
+    case protocol::CommandType::LOGIN:
+        return RapidCommandType::LOGIN;
+    case protocol::CommandType::LOGOUT:
+        return RapidCommandType::LOGOUT;
+    case protocol::CommandType::ACQUIRE:
+        return RapidCommandType::ACQUIRE;
+    case protocol::CommandType::RELEASE:
+        return RapidCommandType::RELEASE;
     default:
         return RapidCommandType::UNKNOWN;
     }
@@ -92,17 +100,17 @@ DecodedRequest Decoder::decode_buffer(const std::string& raw_msg) {
 
     if (client_request.has_target()) {
         decoded_request.target = translate_robtarget(client_request.target());
-        std::cout << "[DECODER] Target: " << decoded_request.target->to_string() << std::endl;
+        // std::cout << "[DECODER] Target: " << decoded_request.target->to_string() << std::endl;
     }
 
     if (client_request.has_extra_target()) {
         decoded_request.extra_target = translate_robtarget(client_request.extra_target());
-        std::cout << "[DECODER] Extra Target: " << decoded_request.extra_target->to_string() << std::endl;
+        // std::cout << "[DECODER] Extra Target: " << decoded_request.extra_target->to_string() << std::endl;
     }
 
     if (client_request.has_joint_target()) {
         decoded_request.joint_target = translate_jointtarget(client_request.joint_target());
-        std::cout << "[DECODER] Joints: " << decoded_request.joint_target->to_string() << std::endl;
+        // std::cout << "[DECODER] Joints: " << decoded_request.joint_target->to_string() << std::endl;
     }
 
     decoded_request.speed = client_request.speed();
@@ -112,6 +120,21 @@ DecodedRequest Decoder::decode_buffer(const std::string& raw_msg) {
     // why not has_task_id()? because is a primitive type
     if (decoded_request.cmd_type == RapidCommandType::CHECK_TASK) {
         decoded_request.task_id = client_request.task_id();
+    }
+
+    if (!client_request.session_token().empty()) {
+        decoded_request.session_token = client_request.session_token();
+        // std::cout << "[DECODER] Session Token: " << decoded_request.session_token.value() << std::endl;
+    }
+
+    if (!client_request.username().empty()) {
+        decoded_request.username = client_request.username();
+        // std::cout << "[DECODER] Username: " << decoded_request.username.value() << std::endl;
+    }
+
+    if (!client_request.password().empty()) {
+        decoded_request.password = client_request.password();
+        // std::cout << "[DECODER] Password: " << decoded_request.password.value() << std::endl;
     }
 
     std::cout << "[DECODER] Decoded Request:\n" << decoded_request_to_string(decoded_request) << std::endl;
@@ -199,6 +222,9 @@ std::string Decoder::decoded_request_to_string(const DecodedRequest& request) {
     if (request.task_id) ss << "task_id: " << *request.task_id << "\n";
     ss << "speed: " << request.speed << "\n";
     ss << "zone: " << static_cast<int>(request.zone) << "\n";
+    if (request.session_token) ss << "session_token: " << *request.session_token << "\n";
+    if (request.username) ss << "username: " << *request.username << "\n";
+    if (request.password) ss << "password: " << *request.password << "\n";
     return ss.str();
 }
 

@@ -103,6 +103,10 @@ RapidCommandType string_to_type(const std::string& cmd_str) {
     if (cmd_str == "ZERO")     return RapidCommandType::ZERO;
     if (cmd_str == "GETSTATUS") return RapidCommandType::GETSTATUS;
     if (cmd_str == "CHECK_TASK") return RapidCommandType::CHECK_TASK;
+    if (cmd_str == "LOGIN")    return RapidCommandType::LOGIN;
+    if (cmd_str == "LOGOUT")   return RapidCommandType::LOGOUT;
+    if (cmd_str == "ACQUIRE")  return RapidCommandType::ACQUIRE;
+    if (cmd_str == "RELEASE")  return RapidCommandType::RELEASE;
     return RapidCommandType::UNKNOWN;
 }
 
@@ -120,6 +124,10 @@ std::string type_to_string(RapidCommandType cmd_type) {
         case RapidCommandType::ZERO: return "ZERO";
         case RapidCommandType::GETSTATUS: return "GETSTATUS";
         case RapidCommandType::CHECK_TASK: return "CHECK_TASK";
+        case RapidCommandType::LOGIN: return "LOGIN";
+        case RapidCommandType::LOGOUT: return "LOGOUT";
+        case RapidCommandType::ACQUIRE: return "ACQUIRE";
+        case RapidCommandType::RELEASE: return "RELEASE";
         default: return "UNKNOWN";
     }
 }
