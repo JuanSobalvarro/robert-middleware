@@ -5,17 +5,19 @@
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        throw std::invalid_argument("Usage: program robots_conf_filepath");
+        throw std::invalid_argument("Usage: program robots_conf_filepath users_filepath");
     }
 
-    const std::string& filepath = argv[1];
+    const std::string& robots_filepath = argv[1];
+    const std::string& users_filepath = argv[2];
 
-    std::cout << "RobertServer running with arguments: " << filepath << std::endl;
+    std::cout << "RobertServer running with arguments: " << robots_filepath << std::endl;
 
     robert::server::Server server("*", 42069);
-    server.load_robots_from_file(filepath);
+    server.load_robots_from_file(robots_filepath);
+    server.load_users_from_file(users_filepath);
 
     server.start();
 

@@ -23,6 +23,10 @@ enum RapidCommandType : uint8_t // Explicitly 1 byte
     ZERO         = 0x09,
     GETSTATUS    = 0x0A,
     CHECK_TASK   = 0x0B,
+    LOGIN        = 0x0C,
+    LOGOUT       = 0x0D,
+    ACQUIRE      = 0x0E,
+    RELEASE      = 0x0F,
     UNKNOWN      = 0xFF
 };
 
@@ -70,6 +74,9 @@ struct DecodedRequest {
     std::optional<uint64_t> task_id;
     float speed{0.0};
     RapidZone zone{RapidZone::FINE};
+    std::optional<std::string> session_token;
+    std::optional<std::string> username;
+    std::optional<std::string> password;
 };
 
 RapidRequest create_rapid_request(const DecodedRequest& decoded);
