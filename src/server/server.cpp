@@ -15,6 +15,7 @@ namespace robert::server {
 Server::Server(const std::string& ip, int port)
     : ip_(ip), port_(port), context_(1), socket_server_(context_, zmq::socket_type::rep), request_handler_(session_manager_, tasker_, robots_)
 {
+    socket_server_.set(zmq::sockopt::rcvtimeo, 500);
     std::string address = "tcp://" + ip_ + ":" + std::to_string(port_);
     socket_server_.bind(address);
 }
@@ -55,11 +56,19 @@ void Server::start()
 
 void Server::stop()
 {
+    // if server is not running, do nothing
+    if (!running_) return;
+
     std::cout << "[SERVER] Stopping server" << std::endl;
 
     running_ = false;
 
     tasker_.stop();
+
+    for (auto& robot : robots_)
+    {
+        robot->stop_session();
+    }
 
     if (server_thread_.joinable())
     {
@@ -76,10 +85,6 @@ void Server::stop()
         sweeper_thread_.join();
     }
 
-    for (auto& robot : robots_)
-    {
-        robot->stop_session();
-    }
 
     std::cout << "[MIDDLEWARE] Server stopped and all robot sessions closed." << std::endl;
 }
@@ -139,7 +144,13 @@ void Server::loop_()
         // remember that recv is thread blocking
         zmq::recv_result_t res = socket_server_.recv(request, zmq::recv_flags::none);
 
-        if (res.has_value() && (EAGAIN == res.value())) {
+        // if there is no value, the recv timed out or there was an error
+        if (!res.has_value()) {
+            // std::cout << "[SERVER] No value received, continuing loop" << std::endl;
+            continue;
+        }
+
+        if (EAGAIN == res.value()) {
             throw std::runtime_error("[ERROR] There is an error with the recv");
         }
 
