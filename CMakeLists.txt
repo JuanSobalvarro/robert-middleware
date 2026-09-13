@@ -55,7 +55,7 @@ set(BUILD_SHARED OFF CACHE BOOL "Disable shared libzmq" FORCE)
 set(BUILD_STATIC ON CACHE BOOL "Enable static libzmq" FORCE)
 
 # debug for robert
-set(ENABLE_ROBERT_DEBUG OFF CACHE BOOL "Enable debug logging" FORCE)
+set(ENABLE_ROBERT_DEBUG ON CACHE BOOL "Enable debug logging" FORCE)
 
 if(ENABLE_ROBERT_DEBUG)
     add_compile_definitions(ROBERT_DEBUG)
