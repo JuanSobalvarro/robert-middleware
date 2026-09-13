@@ -3,16 +3,18 @@ MODULE OperationModule
     VAR jointtarget tempJointTarget;
 
     FUNC bool IsInWorkspace(robtarget target)
+        VAR num margin := 1.0;
+
         ! Check X boundaries
-        IF target.trans.x < corner_min.x OR target.trans.x > corner_max.x THEN
+        IF target.trans.x <= (corner_min.x + margin) OR target.trans.x > (corner_max.x - margin) THEN
             RETURN FALSE;
         ENDIF
         ! Check Y boundaries
-        IF target.trans.y < corner_min.y OR target.trans.y > corner_max.y THEN
+        IF target.trans.y <= (corner_min.y + margin) OR target.trans.y > (corner_max.y - margin) THEN
             RETURN FALSE;
         ENDIF
         ! Check Z boundaries
-        IF target.trans.z < corner_min.z OR target.trans.z > corner_max.z THEN
+        IF target.trans.z <= (corner_min.z + margin) OR target.trans.z > (corner_max.z - margin) THEN
             RETURN FALSE;
         ENDIF
 
