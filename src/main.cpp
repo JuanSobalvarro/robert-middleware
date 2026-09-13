@@ -15,7 +15,7 @@ std::atomic<bool> g_shutdown_requested{false};
 
 void signal_handler(int signum)
 {
-    DEBUG_LOG("\n[MAIN] Interrupt signal (" << signum << ") received. Initiating graceful shutdown...\n");
+    DEBUG_LOG("\n[MAIN] Interrupt signal (" + std::to_string(signum) + ") received. Initiating graceful shutdown...\n");
     g_shutdown_requested = true;
     g_wait_cv.notify_all();
 }
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
 
     const std::string& conf_filepath = argv[1];
 
-    DEBUG_LOG("RobertServer running with arguments: " << conf_filepath << std::endl);
+    DEBUG_LOG("RobertServer running with arguments: " + conf_filepath);
 
     if (!robert::sock_comm::initialize()) {
         std::cerr << "Failed to initialize sockets." << std::endl;

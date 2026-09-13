@@ -2,6 +2,7 @@
 #include "commands/commands.hpp"
 #include "commands/decoder.hpp"
 #include "server/tasker.hpp"
+#include "debug.hpp"
 #include <iostream>
 
 // undefine ERROR macro to avoid conflicts with Windows API
@@ -16,7 +17,7 @@ RequestHandler::RequestHandler(SessionManager& session_manager, Tasker& tasker, 
 
 protocol::ServerResponse RequestHandler::handle(const commands::DecodedRequest& decoded_request, std::atomic<bool>& running_flag) {
     protocol::ServerResponse response;
-    std::cout << "[HANDLER] Processing Request: " << commands::type_to_string(decoded_request.cmd_type) << std::endl;
+    DEBUG_LOG("[HANDLER] Processing Request: " + commands::type_to_string(decoded_request.cmd_type));
 
     switch (decoded_request.cmd_type) {
         case commands::RapidCommandType::UNKNOWN:
@@ -58,16 +59,6 @@ protocol::ServerResponse RequestHandler::handle(const commands::DecodedRequest& 
         case commands::RapidCommandType::PING:
             response.set_status(protocol::ResponseStatus::SUCCESS);
             response.set_text_payload("PONGUWU");
-            break;
-
-        case commands::RapidCommandType::PINGR:
-            if (validate_token(decoded_request)) {
-                response.set_status(protocol::ResponseStatus::SUCCESS);
-                response.set_error_message("PONGR_NOT_IMPLEMENTED");
-            } else {
-                response.set_status(protocol::ResponseStatus::ERROR);
-                response.set_error_message("Invalid token");
-            }
             break;
 
         default:

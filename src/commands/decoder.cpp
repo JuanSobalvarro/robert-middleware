@@ -1,5 +1,6 @@
 #include "commands/decoder.hpp"
 #include "commands/commands.hpp"
+#include "debug.hpp"
 
 #include <iostream>
 #include <string>
@@ -141,7 +142,7 @@ DecodedRequest Decoder::decode_buffer(const std::string& raw_msg) {
         // std::cout << "[DECODER] Password: " << decoded_request.password.value() << std::endl;
     }
 
-    std::cout << "[DECODER] Decoded Request:\n" << decoded_request_to_string(decoded_request) << std::endl;
+    // DEBUG_LOG("[DECODER] Decoded Request:\n" + decoded_request_to_string(decoded_request));
 
     return decoded_request;
 }

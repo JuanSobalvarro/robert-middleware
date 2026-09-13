@@ -1,4 +1,6 @@
 #include "robot.hpp"
+#include "commands/commands.hpp"
+#include "debug.hpp"
 
 #include <iostream>
 #include <string>
@@ -17,8 +19,8 @@ void Robot::start_session() {
     if (running_)
         return;
 
-    std::cout << "[ROBOT] Starting thread for Robot at "
-              << host_ << ":" << port_ << std::endl;
+    DEBUG_LOG("[ROBOT] Starting thread for Robot at "
+              + host_ + ":" + std::to_string(port_));
 
     running_ = true;
     worker_thread_ = std::thread(&Robot::worker_loop, this);
@@ -41,13 +43,11 @@ void Robot::stop_session() {
     connected_ = false;
 }
 
-bool Robot::is_connected() const
-{
+bool Robot::is_connected() const {
     return connected_;
 }
 
-std::future<std::vector<uint8_t>> Robot::queue_request(const commands::RapidRequest& request)
-{
+std::future<std::vector<uint8_t>> Robot::queue_request(const commands::RapidRequest& request) {
     if (!running_)
         throw std::runtime_error("Robot session not started");
 
@@ -63,8 +63,7 @@ std::future<std::vector<uint8_t>> Robot::queue_request(const commands::RapidRequ
     return future;
 }
 
-std::vector<uint8_t> Robot::send_and_receive(const commands::RapidRequest& request)
-{
+std::vector<uint8_t> Robot::send_and_receive(const commands::RapidRequest& request) {
     std::lock_guard<std::mutex> lock(socket_mutex_);
 
     if (socket_fd_ == INVALID_SOCKET_FD)
@@ -76,13 +75,11 @@ std::vector<uint8_t> Robot::send_and_receive(const commands::RapidRequest& reque
     return receive_buffer();
 }
 
-bool Robot::send_request(const commands::RapidRequest& request)
-{
+bool Robot::send_request(const commands::RapidRequest& request) {
     std::size_t total_sent = 0;
     const char* data_ptr = reinterpret_cast<const char*>(&request);
 
-    while (total_sent < sizeof(request))
-    {
+    while (total_sent < sizeof(request)) {
         ssize_t bytes_sent = send(
             socket_fd_,
             data_ptr + total_sent,
@@ -104,8 +101,7 @@ bool Robot::send_request(const commands::RapidRequest& request)
     return true;
 }
 
-std::vector<uint8_t> Robot::receive_buffer()
-{
+std::vector<uint8_t> Robot::receive_buffer() {
     char buffer[256]{};
 
     sock_comm::set_timeouts(socket_fd_, socket_timeout_ms_);
@@ -143,14 +139,13 @@ bool Robot::attempt_connection() {
 }
 
 void Robot::worker_loop() {
-    std::cout << "[ROBOT::WORKER] Worker thread started for Robot at "
-              << host_ << ":" << port_ << std::endl;
+    DEBUG_LOG("[ROBOT::WORKER] Worker thread started for Robot at "
+              + host_ + ":" + std::to_string(port_));
 
     while (running_) {
         if (!connected_) {
             if (attempt_connection()) {
-                std::cout << "[ROBOT::WORKER] Connected to "
-                          << host_ << ":" << port_ << std::endl;
+                std::cout << "[ROBOT::WORKER] Connected to " + host_ + ":" + std::to_string(port_) << std::endl;
             }
             else {
                 std::cout << "[ROBOT::WORKER] Connection failed, retrying in 5 seconds..."
@@ -168,29 +163,38 @@ void Robot::worker_loop() {
         }
 
         RobotWorkItem work_item;
-
+        bool is_heartbeat = false;
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
 
-            queue_cv_.wait(
+            bool has_work = queue_cv_.wait_for(
                 lock,
+                std::chrono::seconds(2),
                 [this] { return !request_queue_.empty() || !running_; }
             );
 
             if (!running_)
                 break;
 
-            work_item = request_queue_.front();
-            request_queue_.pop();
+            if (has_work) {
+                work_item = request_queue_.front();
+                request_queue_.pop();
+            } else {
+                is_heartbeat = true;
+                work_item.command.command_id = commands::RapidCommandType::PINGR;
+                DEBUG_LOG("[ROBOT::WORKER] No work to do, waiting for heartbeat");
+            }
         }
 
-        try
-        {
-            const std::vector<uint8_t> response =
-                send_and_receive(work_item.command);
+        try {
+            const std::vector<uint8_t> response = send_and_receive(work_item.command);
 
-            if (response.empty())
-            {
+            // if it's a heartbeat, skip the response handling (promise)
+            if (is_heartbeat) {
+                continue;
+            }
+
+            if (response.empty()) {
                 std::cerr << "[ROBOT::WORKER] Empty response received"
                           << std::endl;
 
@@ -200,32 +204,32 @@ void Robot::worker_loop() {
             }
 
             work_item.response_promise->set_value(response);
-        }
-        catch (const std::exception& e)
-        {
+        } catch (const std::exception& e) {
             std::cerr << "[ROBOT::WORKER] ERROR: "
                       << e.what() << std::endl;
 
             {
                 std::lock_guard<std::mutex> lock(socket_mutex_);
 
-                if (socket_fd_ != INVALID_SOCKET_FD)
-                {
+                if (socket_fd_ != INVALID_SOCKET_FD) {
                     sock_comm::close_socket(socket_fd_);
                     socket_fd_ = INVALID_SOCKET_FD;
                 }
 
                 connected_ = false;
             }
-            std::string error_msg = "ERR: " + std::string(e.what());
-            work_item.response_promise->set_value(
-                std::vector<uint8_t>{error_msg.begin(), error_msg.end()}
-            );
+
+            if (!is_heartbeat) {
+                std::string error_msg = "ERR: " + std::string(e.what());
+                work_item.response_promise->set_value(
+                    std::vector<uint8_t>{error_msg.begin(), error_msg.end()}
+                );
+            }
         }
     }
 
-    std::cout << "[ROBOT::WORKER] Worker thread exiting for Robot at "
-              << host_ << ":" << port_ << std::endl;
+    DEBUG_LOG("[ROBOT::WORKER] Worker thread exiting for Robot at "
+              + host_ + ":" + std::to_string(port_));
 }
 
 } // namespace robert::robot

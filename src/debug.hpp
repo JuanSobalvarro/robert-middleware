@@ -10,10 +10,10 @@
         return mutex;
     }
 
-    #define DEBUG_LOCK(msg) \
+    #define DEBUG_LOG(msg) \
         do { \
             std::lock_guard<std::mutex> lock(get_debug_mutex()); \
-            std::cout << "[DEBUG] "msg << std::endl; \
+            std::cout << "[DEBUG] " << msg << std::endl; \
         } while (0)
 
 #else
