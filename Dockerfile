@@ -9,13 +9,19 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     ninja-build \
     clang \
+    ccache \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
 
 RUN --mount=type=cache,target=/app/build \
-    cmake -G Ninja -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ && \
+    --mount=type=cache,target=/root/.cache/ccache \
+    cmake -G Ninja -S . -B build \
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache && \
     cmake --build build && \
     cp build/robert_server /tmp/robert_server
 

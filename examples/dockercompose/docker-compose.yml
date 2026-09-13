@@ -3,7 +3,7 @@ name: robert-middleware
 
 services:
   middleware:
-    image: juansobalvarro/robert-middleware:1.0
+    image: robert-middleware:latest
     volumes:
       - ./config/config.yaml:/app/config/config.yaml
     ports:

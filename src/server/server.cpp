@@ -15,7 +15,7 @@
 namespace robert::server {
 
 Server::Server(const std::string& ip, int port, const std::string& conf_filepath)
-    : ip_(ip), port_(port), context_(1), socket_server_(context_, zmq::socket_type::rep), request_handler_(session_manager_, tasker_, robots_)
+    : ip_(ip), port_(port), context_(1), socket_server_(context_, zmq::socket_type::rep), request_handler_(session_manager_, tasker_, robot_)
 {
     socket_server_.set(zmq::sockopt::rcvtimeo, 500);
     std::string address = "tcp://" + ip_ + ":" + std::to_string(port_);
@@ -24,11 +24,11 @@ Server::Server(const std::string& ip, int port, const std::string& conf_filepath
     parser::Conf conf = parser::parse_conf(conf_filepath);
 
     // load robot
-    robots_.push_back(std::make_unique<robot::Robot>(
+    robot_ = std::make_unique<robot::Robot>(
         conf.robot.ip,
         conf.robot.port,
         conf.robot.timeout
-    ));
+    );
 
     // load users
     session_manager_.load_users(conf.users);
@@ -44,23 +44,20 @@ void Server::start()
     if (running_) return;
 
     // check for robots
-    if (robots_.empty())
-    {
-        std::cout << "[MIDDLEWARE] Maybe you dont want to run the server without robots added ? u.u" << std::endl;
-    }
-
-    if (session_manager_.num_users() == 0) {
-        std::cout << "[MIDDLEWARE] No users loaded. Please load users from a file before starting the server." << std::endl;
+    if (robot_ == nullptr) {
+        std::cerr << "[SERVER] No robot loaded. Please load a robot before starting the server." << std::endl;
         return;
     }
 
-    std::cout << "[MIDDLEWARE] Starting Robots' sessions..." << std::endl;
-
-    for (auto& robot : robots_)
-    {
-        robot->start_session();
+    if (session_manager_.num_users() == 0) {
+        std::cerr << "[SERVER] No users loaded. Please load users from a file before starting the server." << std::endl;
+        return;
     }
-    std::cout << "[MIDDLEWARE] Robots' sessions ready!" << std::endl;
+
+    std::cout << "[SERVER] Starting robot session" << std::endl;
+
+    robot_->start_session();
+    std::cout << "[SERVER] Robot session (worker thread) ready." << std::endl;
 
     running_ = true;
     server_thread_ = std::thread(&Server::loop_, this);
@@ -79,9 +76,7 @@ void Server::stop()
 
     tasker_.stop();
 
-    for (auto& robot : robots_) {
-        robot->stop_session();
-    }
+    robot_->stop_session();
 
     if (server_thread_.joinable()) {
         server_thread_.join();
@@ -95,17 +90,7 @@ void Server::stop()
         sweeper_thread_.join();
     }
 
-
-    std::cout << "[MIDDLEWARE] Server stopped and all robot sessions closed." << std::endl;
-}
-
-void Server::wait() {
-    if (server_thread_.joinable()) {
-        server_thread_.join();
-    }
-    if (robot_worker_thread_.joinable()) {
-        robot_worker_thread_.join();
-    }
+    std::cout << "[SERVER] Server stopped and all robot sessions closed." << std::endl;
 }
 
 void Server::loop_()
@@ -165,17 +150,17 @@ void Server::loop_()
 void Server::robot_worker_loop_() {
     while (running_) {
         // wait for a task to be added from the server thread
-        std::cout << "[SERVER_WORKER] Waiting for next task" << std::endl;
+        std::cout << "[SERVER_ROBOT_WORKER] Waiting for next task" << std::endl;
         auto next_id = tasker_.waitForNextTask();
 
         if (!next_id) {
-            std::cout << "[SERVER_WORKER] Received null next id, shutting down robot worker" << std::endl;
+            std::cout << "[SERVER_ROBOT_WORKER] Received null next id, shutting down robot worker" << std::endl;
             break;
         }
 
         task_id_t task_id = *next_id;
 
-        std::cout << "[SERVER_WORKER] Task with id " << task_id << " in operation" << std::endl;
+        std::cout << "[SERVER_ROBOT_WORKER] Task with id " << task_id << " in operation" << std::endl;
 
         // once we got the task then we start it
         if (!tasker_.startTask(task_id))
@@ -189,21 +174,21 @@ void Server::robot_worker_loop_() {
 
         const commands::RapidRequest& req = task->getRequest();
 
-        // send the request to the robot and BLOCK only THIS thread
-        if (!robots_.empty() && robots_[0]->is_connected()) {
-            std::future<std::vector<uint8_t>> future_ack = robots_[0]->queue_request(req);
+        // send request and block only this thread
+        if (!robot_->is_connected()) {
+            tasker_.failTask(task_id, "Robot disconnected");
+            continue;
+        }
+        std::future<std::vector<uint8_t>> future_ack = robot_->queue_request(req);
 
-            if (future_ack.wait_for(std::chrono::seconds(90)) == std::future_status::ready) {
-                std::vector<uint8_t> raw_response = future_ack.get();
-                std::string response(raw_response.begin(), raw_response.end());
+        if (future_ack.wait_for(std::chrono::seconds(90)) == std::future_status::ready) {
+            std::vector<uint8_t> raw_response = future_ack.get();
+            std::string response(raw_response.begin(), raw_response.end());
 
-                if (response.find("ERR:") == 0 || response.find("NACK") == 0) {
-                    tasker_.failTask(task_id, "Robot error: " + response);
-                } else {
-                    tasker_.completeTask(task_id, response);
-                }
+            if (response.find("ERR:") == 0 || response.find("NACK") == 0) {
+                tasker_.failTask(task_id, "Robot error: " + response);
             } else {
-                tasker_.failTask(task_id, "Timeout exceeded"); // Timeout
+                tasker_.completeTask(task_id, response);
             }
         } else {
             tasker_.failTask(task_id, "Robot disconnected"); // Robot disconnected

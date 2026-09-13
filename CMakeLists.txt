@@ -54,6 +54,14 @@ set(protobuf_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(BUILD_SHARED OFF CACHE BOOL "Disable shared libzmq" FORCE)
 set(BUILD_STATIC ON CACHE BOOL "Enable static libzmq" FORCE)
 
+# debug for robert
+option(ENABLE_ROBERT_DEBUG "Enable debug logging" OFF)
+
+if(ENABLE_ROBERT_DEBUG)
+    add_compile_definitions(ROBERT_DEBUG)
+    message(STATUS "RobeRT Debug Logging is ENABLED")
+endif()
+
 # download and available
 FetchContent_MakeAvailable(zmq cppzmq protobuf yaml-cpp)
 find_package(Threads REQUIRED)

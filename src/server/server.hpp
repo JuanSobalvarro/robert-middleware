@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <atomic>
 #include <thread>
@@ -14,6 +15,11 @@
 namespace robert::server
 {
 
+/*
+ * @brief Server class that handles incoming requests and manages the robot.
+ *
+ * Always call `wait()` after `stop()` to ensure the server thread has finished.
+ */
 class Server
 {
 public:
@@ -22,8 +28,6 @@ public:
 
     void start();
     void stop();
-
-    void wait();
 
 private:
     Tasker tasker_;
@@ -39,7 +43,7 @@ private:
     zmq::context_t context_;
     zmq::socket_t socket_server_;
 
-    std::vector<std::unique_ptr<robot::Robot>> robots_;
+    std::unique_ptr<robot::Robot> robot_;
 
     void loop_();
     void robot_worker_loop_();

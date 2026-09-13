@@ -11,8 +11,8 @@
 
 namespace robert::server {
 
-RequestHandler::RequestHandler(SessionManager& session_manager, Tasker& tasker, const std::vector<std::unique_ptr<robot::Robot>>& robots)
-: session_manager_(session_manager), tasker_(tasker), robots_(robots) {}
+RequestHandler::RequestHandler(SessionManager& session_manager, Tasker& tasker, const std::unique_ptr<robot::Robot>& robot)
+: session_manager_(session_manager), tasker_(tasker), robot_(robot) {}
 
 protocol::ServerResponse RequestHandler::handle(const commands::DecodedRequest& decoded_request, std::atomic<bool>& running_flag) {
     protocol::ServerResponse response;
@@ -117,6 +117,12 @@ void RequestHandler::handle_logout(const commands::DecodedRequest& req, protocol
         res.set_error_message("Invalid token");
         return;
     }
+
+    // automatically handle hardware lock to be released
+    if (validate_hardware_lock(req)) {
+        session_manager_.release_lock(token);
+    }
+
     session_manager_.logout(token);
     res.set_status(protocol::ResponseStatus::SUCCESS);
     res.set_text_payload("Logged out successfully");
@@ -223,6 +229,13 @@ void RequestHandler::handle_check_task(const commands::DecodedRequest& req, prot
 }
 
 void RequestHandler::handle_robot_command(const commands::DecodedRequest& req, protocol::ServerResponse& res) {
+
+    if (robot_ == nullptr) {
+        res.set_status(protocol::ResponseStatus::ERROR);
+        res.set_error_message("Robot is nullptr. Call skibidi toilet to fix it :c");
+        return;
+    }
+
     if (!validate_token(req)) {
         res.set_status(protocol::ResponseStatus::ERROR);
         res.set_error_message("Invalid token");
@@ -234,7 +247,7 @@ void RequestHandler::handle_robot_command(const commands::DecodedRequest& req, p
         return;
     }
 
-    if (robots_.empty() || !robots_[0]->is_connected()) {
+    if (!robot_->is_connected()) {
         res.set_status(protocol::ResponseStatus::ERROR);
         res.set_error_message("Robot not connected");
         return;

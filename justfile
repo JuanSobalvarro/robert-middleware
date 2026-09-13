@@ -12,7 +12,7 @@ build:
 [group('building')]
 docker_build:
     @echo "Building Docker image..."
-    docker build -t robert-middleware:1.0 .
+    docker build -t robert-middleware:1.1 .
 
 [group('building')]
 clean:
@@ -29,7 +29,7 @@ run:
 docker_create:
     @echo "Cleaning, creating and running Docker container..."
     -just docker_clean
-    docker run --name robert-middleware -p 42069:42069 -v "{{justfile_directory()}}/config/config.yaml:/app/config/config.yaml" robert-middleware:1.0
+    docker run --name robert-middleware -p 42069:42069 -v "{{justfile_directory()}}/config/config.yaml:/app/config/config.yaml" robert-middleware:latest
 
 [group('run')]
 docker_run:
