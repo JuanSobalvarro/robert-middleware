@@ -36,6 +36,8 @@ FetchContent_Declare(
     protobuf
     GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
     GIT_TAG        v34.1
+    GIT_SHALLOW    ON
+    GIT_PROGRESS   ON
 )
 
 FetchContent_Declare(

@@ -17,7 +17,9 @@ RequestHandler::RequestHandler(SessionManager& session_manager, Tasker& tasker, 
 
 protocol::ServerResponse RequestHandler::handle(const commands::DecodedRequest& decoded_request, std::atomic<bool>& running_flag) {
     protocol::ServerResponse response;
-    DEBUG_LOG("[HANDLER] Processing Request: " + commands::type_to_string(decoded_request.cmd_type));
+
+    if (decoded_request.cmd_type != commands::RapidCommandType::CHECK_TASK)
+        std::cout << "[HANDLER] Processing Request: " << commands::type_to_string(decoded_request.cmd_type) << " made by " << session_manager_.token_to_username(decoded_request.session_token.value_or("")) << std::endl;
 
     switch (decoded_request.cmd_type) {
         case commands::RapidCommandType::UNKNOWN:

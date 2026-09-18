@@ -113,7 +113,7 @@ MODULE OperationModule
             CASE "MoveC":
                 IF Present(target_coords) AND Present(circular_extra_target) THEN
                     IF IsSafeTarget(\rtarget:=target_coords) AND IsSafeTarget(\rtarget:=circular_extra_target) THEN
-                        MoveC target_coords, circular_extra_target, move_speed, move_zone, tool0;
+                        MoveC circular_extra_target, target_coords, move_speed, move_zone, tool0;
                         SendResponse "ACK|MoveC";
                     ELSE
                         TPWrite "Error: MoveC targets unreachable or singular.";

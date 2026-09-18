@@ -98,6 +98,15 @@ size_t SessionManager::num_users() const {
     return users_.size();
 }
 
+std::string SessionManager::token_to_username(const std::string& token) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto& [s_token, s_session] : sessions_) {
+        if (token == s_token) return s_session.username;
+    }
+
+    return "";
+}
+
 
 std::string SessionManager::generate_uuid() {
     static std::random_device rd;

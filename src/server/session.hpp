@@ -36,6 +36,8 @@ public:
 
     size_t num_users() const;
 
+    std::string token_to_username(const std::string& token);
+
 private:
     std::unordered_map<std::string, std::string> users_;
     std::unordered_map<std::string, Session> sessions_;
